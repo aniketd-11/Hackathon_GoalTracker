@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* @import "@liveblocks/react-ui/styles.css"; */
+/* @import "@liveblocks/react-lexical/styles.css"; */
+
+/* @import "../styles/dark-theme.css"; */
+
+/* ========================================== TAILWIND STYLES */
+@layer base {
+  :root {
+    background: #eff6ff;
+    color: #0b0a0a;
+    margin: 0;
+  }
+}
+
+@layer utilities {
+  .button-active-default {
+    @apply rounded-md bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors;
+  }
+  .button-hover-default {
+    @apply rounded-md hover:bg-gray-100 transition-colors;
+  }
+  /* .text-10-regular {
+    @apply text-[10px] font-normal;
+  } */
+}
