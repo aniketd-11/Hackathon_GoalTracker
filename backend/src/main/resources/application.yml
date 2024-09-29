@@ -2,13 +2,13 @@ spring:
   application:
     name: GoalTracker
   datasource:
-    url: jdbc:mysql://localhost:5432/your_database_name
-    username: ${MYSQL_USER}
+    url: jdbc:mysql://eazyschooldb-aniketd936-f7fb.i.aivencloud.com:10899/goaltrackerDB
+    username: avnadmin
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update # Automatically update the database schema (can be changed to 'validate', 'none', etc.)
+#      ddl-auto: update # Automatically update the database schema (can be changed to 'validate', 'none', etc.)
     show-sql: true # Log SQL queries in the console
     properties:
       hibernate:
