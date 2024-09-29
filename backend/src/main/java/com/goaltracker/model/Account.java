@@ -1,11 +1,10 @@
 package com.goaltracker.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Set;
 
 @Entity
 @Data
@@ -17,4 +16,7 @@ public class Account {
     private int accountId;
 
     private String account_name;
+
+    @OneToMany(mappedBy = "account")
+    private Set<Project> projects;
 }
