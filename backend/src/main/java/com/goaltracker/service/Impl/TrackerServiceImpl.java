@@ -3,21 +3,31 @@ package com.goaltracker.service.Impl;
 import com.goaltracker.dto.GoalTrackerRequestDTO;
 import com.goaltracker.model.GoalTrackerMaster;
 import com.goaltracker.model.Project;
+import com.goaltracker.model.TemplateAction;
+import com.goaltracker.model.TemplateTypes;
 import com.goaltracker.repository.GoalTrackerMasterRepository;
 import com.goaltracker.repository.ProjectRepository;
+import com.goaltracker.repository.TemplateActionsRepository;
 import com.goaltracker.service.Interface.TrackerService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class TrackerServiceImpl implements TrackerService {
 
     private final GoalTrackerMasterRepository goalTrackerMasterRepository;
     private final ProjectRepository projectRepository;
+    private final TemplateActionsRepository templateActionsRepository;
 
+    @Autowired
     public TrackerServiceImpl(ProjectRepository projectRepository,
-                              GoalTrackerMasterRepository goalTrackerMasterRepository) {
+                              GoalTrackerMasterRepository goalTrackerMasterRepository,
+                              TemplateActionsRepository templateActionsRepository) {
         this.projectRepository = projectRepository;
         this.goalTrackerMasterRepository = goalTrackerMasterRepository;
+        this.templateActionsRepository = templateActionsRepository;
     }
 
     @Override
@@ -40,10 +50,13 @@ public class TrackerServiceImpl implements TrackerService {
             return savedGoalTracker;
 
         } catch (Exception e) {
-            // Log the exception (you could use a logger here)
-            System.err.println("Error occurred while adding GoalTracker: " + e.getMessage());
             throw new RuntimeException("Failed to add GoalTracker");
         }
+    }
+
+    @Override
+    public List<TemplateAction> getTemplateActions(TemplateTypes templateType) {
+        return templateActionsRepository.findByTemplateTypes(templateType);
     }
 
 }
