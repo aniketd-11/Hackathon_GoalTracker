@@ -1,9 +1,8 @@
 package com.goaltracker.controller;
 
 import com.goaltracker.dto.AccountDTO;
-import com.goaltracker.dto.ProjectDTO;
+import com.goaltracker.dto.ProjectWithGoalTrackerDTO;
 import com.goaltracker.service.Interface.AccountService;
-import com.goaltracker.service.Interface.AuthService;
 import com.goaltracker.service.Interface.ProjectService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,9 +39,9 @@ public class AccountProjectController {
     }
 
     @GetMapping("/qn/projects")
-    public ResponseEntity<List<ProjectDTO>> getAllProjectsForQNTeam(@RequestParam int accountId) {
+    public ResponseEntity<List<ProjectWithGoalTrackerDTO>> getAllProjectsForQNTeam(@RequestParam int accountId) {
         try {
-            List<ProjectDTO> projectList = projectService.getAllProjectsForQNTeam(accountId);
+            List<ProjectWithGoalTrackerDTO> projectList = projectService.getAllProjectsForQNTeam(accountId);
             return ResponseEntity.ok(projectList);
         } catch (Exception e) {
             // Return internal server error in case of exceptions
@@ -55,7 +54,7 @@ public class AccountProjectController {
     @GetMapping("/dm/projects")
     public ResponseEntity<?> getProjectsForDM(@RequestParam String email) {
         try{
-            List<ProjectDTO> projectList = projectService.getProjectsForDM(email);
+            List<ProjectWithGoalTrackerDTO> projectList = projectService.getProjectsForDM(email);
             if (!projectList.isEmpty()) {
                 return ResponseEntity.ok(projectList); // Return the list if not empty
             } else {
