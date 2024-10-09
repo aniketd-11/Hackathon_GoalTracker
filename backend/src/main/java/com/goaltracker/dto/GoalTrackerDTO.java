@@ -28,5 +28,14 @@ public class GoalTrackerDTO {
         this.rating = goalTracker.getRating() != null ? goalTracker.getRating().toString() : null;
         this.actions = actions;
     }
+
+    public GoalTrackerDTO(GoalTrackerMaster goalTracker) {
+        this.trackerId = goalTracker.getTrackerId();
+        this.goalTrackerName = goalTracker.getGoalTrackerName();
+        this.startDate = goalTracker.getStartDate();
+        this.endDate = goalTracker.getEndDate();
+        this.status = goalTracker.getStatus() != null ? goalTracker.getStatus().toString() : null;
+        this.rating = goalTracker.getRating() != null ? goalTracker.getRating().toString() : null;
+    }
 }
 

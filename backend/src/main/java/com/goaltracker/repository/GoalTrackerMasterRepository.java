@@ -4,6 +4,8 @@ import com.goaltracker.model.GoalTrackerMaster;
 import com.goaltracker.model.Project;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface GoalTrackerMasterRepository extends JpaRepository<GoalTrackerMaster,Integer> {
-    GoalTrackerMaster findTopByProjectProjectIdOrderByStartDateDesc(int projectId);
+    List<GoalTrackerMaster> findByProjectProjectId(int projectId);
 }
