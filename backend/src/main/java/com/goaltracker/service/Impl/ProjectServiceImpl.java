@@ -1,5 +1,6 @@
 package com.goaltracker.service.Impl;
 
+import com.goaltracker.dto.GoalTrackerDTO;
 import com.goaltracker.dto.ProjectWithGoalTrackerDTO;
 import com.goaltracker.model.GoalTrackerMaster;
 import com.goaltracker.model.Project;
@@ -42,35 +43,45 @@ public class ProjectServiceImpl implements ProjectService {
         // Fetch the projects assigned to the DM
         return userProjectMappingRepository.findByUserId(user.getId())
                 .stream()
-                .map(mapping -> mapToProjectWithGoalTrackerDTO(mapping.getProject()))
+                .map(mapping -> mapToProjectWithGoalTrackersDTO(mapping.getProject()))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<ProjectWithGoalTrackerDTO> getAllProjectsForQNTeam(int accountId) {
-        // Fetch all projects and map to DTO
-        return projectRepository.findAll()
-                .stream()
-                .map(this::mapToProjectWithGoalTrackerDTO)
+        List<Project> projects = projectRepository.findByAccount_AccountId(accountId);
+
+        // Map projects and their goal trackers to DTOs
+        return projects.stream()
+                .map(this::mapToProjectWithGoalTrackersDTO)
                 .collect(Collectors.toList());
     }
 
-    // Helper method to avoid code repetition for mapping project and goal tracker details
-    private ProjectWithGoalTrackerDTO mapToProjectWithGoalTrackerDTO(Project project) {
-        // Fetch the most recent goal tracker for the project
-        GoalTrackerMaster tracker = goalTrackerMasterRepository.findTopByProjectProjectIdOrderByStartDateDesc(project.getProjectId());
+    // Helper method to map Project and its goal trackers to a DTO
+    private ProjectWithGoalTrackerDTO mapToProjectWithGoalTrackersDTO(Project project) {
+        // Fetch all goal trackers for the project
+        List<GoalTrackerMaster> trackers = goalTrackerMasterRepository.findByProjectProjectId(project.getProjectId());
 
-        // Map project and goal tracker details into DTO
+        // Map goal trackers to GoalTrackerDTO
+        List<GoalTrackerDTO> goalTrackers = trackers.stream()
+                .map(tracker -> new GoalTrackerDTO(
+                        tracker.getTrackerId(),
+                        tracker.getGoalTrackerName(),
+                        tracker.getStartDate(),
+                        tracker.getEndDate(),
+                        tracker.getStatus() != null ? tracker.getStatus().toString() : null,
+                        tracker.getRating() != null ? tracker.getRating().toString() : null,
+                        null
+                ))
+                .collect(Collectors.toList());
+
+        // Return the ProjectWithGoalTrackersDTO with the project and its goal trackers
         return new ProjectWithGoalTrackerDTO(
                 project.getProjectId(),
                 project.getProjectName(),
                 project.getTemplateType().name(),
-                tracker != null ? tracker.getTrackerId() : 0,
-                tracker != null ? tracker.getGoalTrackerName() : null,
-                tracker != null ? tracker.getStartDate() : null,
-                tracker != null ? tracker.getEndDate() : null,
-                tracker != null && tracker.getStatus() != null ? tracker.getStatus().name() : null,
-                tracker != null && tracker.getRating() != null ? tracker.getRating().name() : null
+                goalTrackers
         );
     }
+
 }

@@ -50,7 +50,6 @@ public class AccountProjectController {
         }
     }
 
-    // Endpoint for DM to get their assigned projects
     @GetMapping("/dm/projects")
     public ResponseEntity<?> getProjectsForDM(@RequestParam String email) {
         try{
