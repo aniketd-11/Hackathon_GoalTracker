@@ -32,15 +32,22 @@ public class TemplateAction {
 
     private String actionOptions;
 
+    @Enumerated(EnumType.STRING)
+    private ActionCategory actionCategory;
+
     private LocalDateTime createdAt;
 
     // Enum for defining different types of actions
     public enum ActionType {
-        STRING, NUMERIC, PERCENTAGE, COUNT,BOOLEAN
+        NUMERIC, PERCENTAGE, COUNT, OPTION
     }
 
     // Enum for different comparison operators
     public enum ComparisonOperator {
         GREATER_THAN_EQUAL, LESS_THAN_EQUAL, EQUAL, NOT_EQUAL
+    }
+
+    public enum ActionCategory {
+        MAJOR, MINOR, OTHER
     }
 }

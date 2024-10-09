@@ -1,7 +1,10 @@
 package com.goaltracker.controller;
 
+import com.goaltracker.dto.ActionValueDTO;
+import com.goaltracker.dto.GoalTrackerDTO;
 import com.goaltracker.dto.GoalTrackerRequestDTO;
 import com.goaltracker.model.GoalTrackerMaster;
+import com.goaltracker.model.Status;
 import com.goaltracker.model.TemplateAction;
 import com.goaltracker.model.TemplateTypes;
 import com.goaltracker.service.Interface.AccountService;
@@ -43,6 +46,40 @@ public class TrackerController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error occurred getting Goal Tracker Actions: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/add-trackerActionValue")
+    public ResponseEntity<?> addTrackerActionValues(@RequestBody List<ActionValueDTO> actionValueDTOs, @RequestParam int trackerId) {
+        try {
+            trackerService.addTrackerActionValues(actionValueDTOs, trackerId);
+            return ResponseEntity.ok("Action values and ratings saved successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error occurred while processing action values: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/getGoalTrackerWithActionsById")
+    public ResponseEntity<?> getGoalTrackerWithActionsById(@RequestParam int trackerId) {
+        try {
+            // Call service method to get tracker details
+            GoalTrackerDTO goalTrackerDTO = trackerService.getGoalTrackerWithActions(trackerId);
+            return ResponseEntity.ok(goalTrackerDTO);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving goal tracker: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{trackerId}/status")
+    public ResponseEntity<?> updateGoalTrackerStatus(@PathVariable int trackerId, @RequestBody Status status) {
+        try {
+            trackerService.updateGoalTrackerStatus(trackerId, status);
+            return ResponseEntity.ok("Status updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating status: " + e.getMessage());
         }
     }
 }

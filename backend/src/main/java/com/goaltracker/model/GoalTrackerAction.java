@@ -26,4 +26,8 @@ public class GoalTrackerAction {
 
     // Single column to store any type of value as a string for now
     private String actionValue;
+
+    @Enumerated(EnumType.STRING)
+    private Rating actionRating;
+
 }
