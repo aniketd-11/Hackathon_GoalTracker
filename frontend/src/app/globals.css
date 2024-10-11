@@ -10,20 +10,34 @@
 /* ========================================== TAILWIND STYLES */
 @layer base {
   :root {
-    background: #eff6ff;
+    background: #fafafa;
     color: #0b0a0a;
     margin: 0;
   }
 }
 
-@layer utilities {
-  .button-active-default {
-    @apply rounded-md bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors;
+@layer components {
+  .sidebar {
+    @apply shadow-xl text-blue-950 transition-all duration-300 ease-in-out border-r border-gray-300;
   }
-  .button-hover-default {
-    @apply rounded-md hover:bg-gray-100 transition-colors;
+
+  .table-header {
+    @apply px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider;
   }
-  /* .text-10-regular {
-    @apply text-[10px] font-normal;
-  } */
+
+  .table-cell {
+    @apply px-6 py-4 whitespace-nowrap;
+  }
+
+  .progress-bar {
+    @apply w-full bg-blue-200 rounded-full h-2.5 mr-2;
+  }
+
+  .progress-bar-fill {
+    @apply bg-blue-600 h-2.5 rounded-full;
+  }
+
+  .pagination-button {
+    @apply text-blue-600 hover:bg-blue-100;
+  }
 }
