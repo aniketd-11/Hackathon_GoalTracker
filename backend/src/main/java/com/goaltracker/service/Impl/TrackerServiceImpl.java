@@ -1,9 +1,6 @@
 package com.goaltracker.service.Impl;
 
-import com.goaltracker.dto.ActionValueDTO;
-import com.goaltracker.dto.GoalTrackerActionDTO;
-import com.goaltracker.dto.GoalTrackerDTO;
-import com.goaltracker.dto.GoalTrackerRequestDTO;
+import com.goaltracker.dto.*;
 import com.goaltracker.model.*;
 import com.goaltracker.repository.GoalTrackerActionRepository;
 import com.goaltracker.repository.GoalTrackerMasterRepository;
@@ -13,9 +10,7 @@ import com.goaltracker.service.Interface.TrackerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class TrackerServiceImpl implements TrackerService {
@@ -44,6 +39,14 @@ public class TrackerServiceImpl implements TrackerService {
             Project project = projectRepository.findById(dto.getProjectId())
                     .orElseThrow(() -> new RuntimeException("Project with ID " + dto.getProjectId() + " not found"));
 
+            if (dto.getIsLatest()) {
+                GoalTrackerMaster existingTrackers = goalTrackerMasterRepository.findByProject_ProjectIdAndIsLatest(dto.getProjectId(), true);
+                if(existingTrackers != null){
+                    existingTrackers.setLatest(false);
+                    goalTrackerMasterRepository.save(existingTrackers);
+                }
+            }
+
             GoalTrackerMaster goalTracker = new GoalTrackerMaster();
             goalTracker.setGoalTrackerName(dto.getGoalTrackerName());
             goalTracker.setStartDate(dto.getStartDate());
@@ -51,7 +54,7 @@ public class TrackerServiceImpl implements TrackerService {
             goalTracker.setProject(project);
             goalTracker.setStatus(Status.INITIATED);
             goalTracker.setRating(null);
-            goalTracker.setLatest(false);
+            goalTracker.setLatest(dto.getIsLatest());
 
             GoalTrackerMaster savedGoalTracker = goalTrackerMasterRepository.save(goalTracker);
             return savedGoalTracker;
@@ -73,7 +76,7 @@ public class TrackerServiceImpl implements TrackerService {
                 .orElseThrow(() -> new RuntimeException("Goal Tracker not found"));
 
         // Fetch associated GoalTrackerAction and TemplateAction details
-        List<GoalTrackerActionDTO> actions = goalTrackerActionRepository.findActionsByTrackerId(trackerId);
+        List<GoalTrackerActionDTO> actions = fetchActionsForTracker(trackerId);
 
         // Create and return DTO containing both tracker details and actions
         return new GoalTrackerDTO(goalTracker, actions);
@@ -139,6 +142,41 @@ public class TrackerServiceImpl implements TrackerService {
             goalTracker.setRating(Rating.GREEN);
         }
         goalTrackerMasterRepository.save(goalTracker);
+    }
+
+    @Override
+    // Method to retrieve all projects with their latest goal trackers
+    public List<ProjectWithGoalTrackerDTO> getAllProjectsWithGoalTrackers(TemplateTypes templateType) {
+        // Fetch all projects
+        List<Project> projects = projectRepository.findByTemplateType(templateType); // Filter by templateType if required
+
+        List<ProjectWithGoalTrackerDTO> projectDTOs = new ArrayList<>();
+
+        for (Project project : projects) {
+            // Fetch the latest tracker for the current project (where isLatest = 1)
+            GoalTrackerMaster latestTracker = goalTrackerMasterRepository
+                    .findByProject_ProjectIdAndIsLatest(project.getProjectId(),true);
+
+            if (latestTracker != null) {
+                // Fetch associated actions for the latest tracker
+                List<GoalTrackerActionDTO> actions = fetchActionsForTracker(latestTracker.getTrackerId());
+
+                // Create GoalTrackerDTO with tracker and its actions
+                GoalTrackerDTO goalTrackerDTO = new GoalTrackerDTO(latestTracker, actions);
+
+                // Create the ProjectWithGoalTrackerDTO
+                ProjectWithGoalTrackerDTO projectWithGoalTrackerDTO = new ProjectWithGoalTrackerDTO(
+                        project.getProjectId(),
+                        project.getProjectName(),
+                        project.getTemplateType() != null ? project.getTemplateType().toString() : null,
+                        Collections.singletonList(goalTrackerDTO)
+                );
+
+                projectDTOs.add(projectWithGoalTrackerDTO);
+            }
+        }
+
+        return projectDTOs;
     }
 
     private String calculateRating(String actionValue, TemplateAction action) {
@@ -218,4 +256,7 @@ public class TrackerServiceImpl implements TrackerService {
         }
     }
 
+    private List<GoalTrackerActionDTO> fetchActionsForTracker(int trackerId) {
+        return goalTrackerActionRepository.findActionsByTrackerId(trackerId);
+    }
 }
