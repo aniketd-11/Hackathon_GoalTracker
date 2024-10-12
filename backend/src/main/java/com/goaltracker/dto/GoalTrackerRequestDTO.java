@@ -11,4 +11,5 @@ public class GoalTrackerRequestDTO {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private int projectId;
+    private Boolean isLatest;
 }

@@ -6,4 +6,5 @@ import lombok.Data;
 public class ActionValueDTO {
     private String actionValue;
     private int actionId;
+    private Boolean isNotApplicable;
 }

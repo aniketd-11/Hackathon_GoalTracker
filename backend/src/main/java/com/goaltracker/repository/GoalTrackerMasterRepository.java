@@ -8,4 +8,8 @@ import java.util.List;
 
 public interface GoalTrackerMasterRepository extends JpaRepository<GoalTrackerMaster,Integer> {
     List<GoalTrackerMaster> findByProjectProjectId(int projectId);
+    GoalTrackerMaster findByProject_ProjectIdAndIsLatest(int projectId, boolean isLatest);
+
+
+
 }

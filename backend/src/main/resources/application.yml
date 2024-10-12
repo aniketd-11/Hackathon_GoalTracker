@@ -14,5 +14,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+# Add file upload size limits here
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB    # Maximum file size allowed for upload
+      max-request-size: 10MB # Maximum size allowed for multipart/form-data requests
+
 server:
   port: 8080

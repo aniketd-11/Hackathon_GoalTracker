@@ -1,37 +1,50 @@
 package com.goaltracker.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goaltracker.dto.ActionValueDTO;
 import com.goaltracker.dto.GoalTrackerDTO;
 import com.goaltracker.dto.GoalTrackerRequestDTO;
+import com.goaltracker.dto.ProjectWithGoalTrackerDTO;
 import com.goaltracker.model.GoalTrackerMaster;
 import com.goaltracker.model.Status;
 import com.goaltracker.model.TemplateAction;
 import com.goaltracker.model.TemplateTypes;
-import com.goaltracker.service.Interface.AccountService;
-import com.goaltracker.service.Interface.ProjectService;
-import com.goaltracker.service.Interface.TrackerService;
+import com.goaltracker.service.Interface.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/tracker")
 public class TrackerController {
 
     private final TrackerService trackerService;
+    private final ExcelService excelService;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     // Constructor injection
-    public TrackerController(TrackerService trackerService) {
+    public TrackerController(TrackerService trackerService,ExcelService excelService) {
         this.trackerService = trackerService;
+        this.excelService = excelService;
     }
 
     @PostMapping("/create-tracker")
     public ResponseEntity<?> createGoalTracker(@RequestBody GoalTrackerRequestDTO dto) {
         try {
             GoalTrackerMaster goalTracker = trackerService.addGoalTracker(dto);
-            return ResponseEntity.ok(goalTracker.getTrackerId());
+            return ResponseEntity.status(HttpStatus.OK).body("TrackerID: " + goalTracker.getTrackerId());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error occurred while creating Goal Tracker: " + e.getMessage());
@@ -49,10 +62,25 @@ public class TrackerController {
         }
     }
 
-    @PostMapping("/add-trackerActionValue")
-    public ResponseEntity<?> addTrackerActionValues(@RequestBody List<ActionValueDTO> actionValueDTOs, @RequestParam int trackerId) {
+    @PostMapping(value = "/add-trackerActionValue", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> addTrackerActionValues(@RequestParam String actionValueDTOsJson,
+                                                    @RequestParam int trackerId,
+                                                    @RequestParam(required = false) Map<String, MultipartFile> files) {
         try {
-            trackerService.addTrackerActionValues(actionValueDTOs, trackerId);
+            List<ActionValueDTO> actionValueDTOs = mapper.readValue(actionValueDTOsJson,
+                    mapper.getTypeFactory().constructCollectionType(List.class, ActionValueDTO.class));
+            Map<Integer, MultipartFile> actionIdToFileMap = new HashMap<>();
+            if (files != null) {
+                for (Map.Entry<String, MultipartFile> entry : files.entrySet()) {
+                    String key = entry.getKey();
+                    if (key.startsWith("file-")) {
+                        // Extract actionId from the key (e.g., "file-1" -> 1)
+                        int actionId = Integer.parseInt(key.substring(5));
+                        actionIdToFileMap.put(actionId, entry.getValue());
+                    }
+                }
+            }
+            trackerService.addTrackerActionValues(actionValueDTOs, trackerId,actionIdToFileMap);
             return ResponseEntity.ok("Action values and ratings saved successfully.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -80,6 +108,26 @@ public class TrackerController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error updating status: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<?> downloadGoalTrackerExcel(@RequestParam TemplateTypes templateType) {
+        try {
+            List<ProjectWithGoalTrackerDTO> dto = trackerService.getAllProjectsWithGoalTrackers(templateType);
+            List<TemplateAction> templateActions = trackerService.getTemplateActions(templateType);
+            ByteArrayInputStream in = excelService.generateExcel(dto,templateActions);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=goal_tracker_report.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(in.readAllBytes());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }

@@ -1,21 +1,19 @@
 package com.goaltracker.service.Impl;
 
-import com.goaltracker.dto.ActionValueDTO;
-import com.goaltracker.dto.GoalTrackerActionDTO;
-import com.goaltracker.dto.GoalTrackerDTO;
-import com.goaltracker.dto.GoalTrackerRequestDTO;
+import com.goaltracker.dto.*;
 import com.goaltracker.model.*;
 import com.goaltracker.repository.GoalTrackerActionRepository;
 import com.goaltracker.repository.GoalTrackerMasterRepository;
 import com.goaltracker.repository.ProjectRepository;
 import com.goaltracker.repository.TemplateActionsRepository;
+import com.goaltracker.service.Interface.FileStorageService;
 import com.goaltracker.service.Interface.TrackerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
 
 @Service
 public class TrackerServiceImpl implements TrackerService {
@@ -23,26 +21,35 @@ public class TrackerServiceImpl implements TrackerService {
     private final GoalTrackerMasterRepository goalTrackerMasterRepository;
     private final ProjectRepository projectRepository;
     private final TemplateActionsRepository templateActionsRepository;
-
     private final GoalTrackerActionRepository goalTrackerActionRepository;
+    private final FileStorageService fileStorageService;
 
     @Autowired
     public TrackerServiceImpl(ProjectRepository projectRepository,
                               GoalTrackerMasterRepository goalTrackerMasterRepository,
                               TemplateActionsRepository templateActionsRepository,
-                              GoalTrackerActionRepository goalTrackerActionRepository) {
+                              GoalTrackerActionRepository goalTrackerActionRepository,
+                              FileStorageService fileStorageService) {
         this.projectRepository = projectRepository;
         this.goalTrackerMasterRepository = goalTrackerMasterRepository;
         this.templateActionsRepository = templateActionsRepository;
         this.goalTrackerActionRepository = goalTrackerActionRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     @Override
     public GoalTrackerMaster addGoalTracker(GoalTrackerRequestDTO dto) {
         try {
-            // Fetch project entity based on projectId from DTO using Java 8 Optional
             Project project = projectRepository.findById(dto.getProjectId())
                     .orElseThrow(() -> new RuntimeException("Project with ID " + dto.getProjectId() + " not found"));
+
+            if (dto.getIsLatest()) {
+                GoalTrackerMaster existingTrackers = goalTrackerMasterRepository.findByProject_ProjectIdAndIsLatest(dto.getProjectId(), true);
+                if(existingTrackers != null){
+                    existingTrackers.setLatest(false);
+                    goalTrackerMasterRepository.save(existingTrackers);
+                }
+            }
 
             GoalTrackerMaster goalTracker = new GoalTrackerMaster();
             goalTracker.setGoalTrackerName(dto.getGoalTrackerName());
@@ -51,7 +58,7 @@ public class TrackerServiceImpl implements TrackerService {
             goalTracker.setProject(project);
             goalTracker.setStatus(Status.INITIATED);
             goalTracker.setRating(null);
-            goalTracker.setLatest(false);
+            goalTracker.setLatest(dto.getIsLatest());
 
             GoalTrackerMaster savedGoalTracker = goalTrackerMasterRepository.save(goalTracker);
             return savedGoalTracker;
@@ -73,7 +80,7 @@ public class TrackerServiceImpl implements TrackerService {
                 .orElseThrow(() -> new RuntimeException("Goal Tracker not found"));
 
         // Fetch associated GoalTrackerAction and TemplateAction details
-        List<GoalTrackerActionDTO> actions = goalTrackerActionRepository.findActionsByTrackerId(trackerId);
+        List<GoalTrackerActionDTO> actions = fetchActionsForTracker(trackerId);
 
         // Create and return DTO containing both tracker details and actions
         return new GoalTrackerDTO(goalTracker, actions);
@@ -88,58 +95,121 @@ public class TrackerServiceImpl implements TrackerService {
     }
 
     @Override
-    public void addTrackerActionValues(List<ActionValueDTO> actionValueDTO, int trackerId) {
+    public void addTrackerActionValues(List<ActionValueDTO> actionValueDTO, int trackerId, Map<Integer, MultipartFile> actionIdToFileMap) {
         GoalTrackerMaster goalTracker = goalTrackerMasterRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
 
         int redRatingCount = 0, orangeRatingCount = 0;
-
+        List<GoalTrackerAction> goalTrackerActionsToSave = new ArrayList<>();
         for (ActionValueDTO dto : actionValueDTO) {
             TemplateAction action = templateActionsRepository.findById(dto.getActionId())
                     .orElseThrow(() -> new RuntimeException("Action ID " + dto.getActionId() + " not found"));
 
-            // Calculate the rating based on the action's value, benchmark, and comparison operator
-            String rating = calculateRating(dto.getActionValue(), action);
-            if(Objects.equals(rating, Rating.RED.toString())){
-                redRatingCount++;
-            }
-            if(Objects.equals(rating, Rating.ORANGE.toString())){
-                orangeRatingCount++;
+            // Calculate the rating only if the action is applicable
+            String rating = null;
+            if(!dto.getIsNotApplicable()){
+                rating = calculateRating(dto.getActionValue(), action);
+                if (Objects.equals(rating, Rating.RED.toString())) {
+                    redRatingCount++;
+                }
+                if (Objects.equals(rating, Rating.ORANGE.toString())) {
+                    orangeRatingCount++;
+                }
             }
 
             // Check if the action value already exists for the given tracker and action
-            Optional<GoalTrackerAction> existingActionValue = goalTrackerActionRepository.findByGoalTracker_TrackerIdAndTemplateAction_ActionId(trackerId, dto.getActionId());
+            Optional<GoalTrackerAction> existingActionValue = goalTrackerActionRepository
+                    .findByGoalTracker_TrackerIdAndTemplateAction_ActionId(trackerId, dto.getActionId());
 
             GoalTrackerAction goalTrackerAction;
             if (existingActionValue.isPresent()) {
                 // Update the existing record
                 goalTrackerAction = existingActionValue.get();
                 goalTrackerAction.setActionValue(dto.getActionValue());
-                goalTrackerAction.setActionRating(Rating.valueOf(rating));
+                goalTrackerAction.setActionRating(rating != null ? Rating.valueOf(rating) : null);
+                goalTrackerAction.setIsNotApplicable(dto.getIsNotApplicable());
             } else {
                 // Create a new record
                 goalTrackerAction = new GoalTrackerAction();
                 goalTrackerAction.setGoalTracker(goalTracker);
                 goalTrackerAction.setTemplateAction(action);
                 goalTrackerAction.setActionValue(dto.getActionValue());
-                goalTrackerAction.setActionRating(Rating.valueOf(rating));
+                goalTrackerAction.setActionRating(rating != null ? Rating.valueOf(rating) : null);
+                goalTrackerAction.setIsNotApplicable(dto.getIsNotApplicable());
             }
 
-            // Save or update the tracker action value
-            goalTrackerActionRepository.save(goalTrackerAction);
+            // If action is applicable and a file is attached, store the file
+            if (dto.getIsNotApplicable() != null && dto.getIsNotApplicable()) {
+                MultipartFile file = actionIdToFileMap.get(dto.getActionId());
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        String filePath = fileStorageService.saveFile(file);
+                        if (existingActionValue.isPresent()) {
+                            goalTrackerAction.setAttachedDocument(filePath);
+                        } else {
+                            goalTrackerAction.setAttachedDocument(filePath);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException("Error saving file for action ID: " + dto.getActionId(), e);
+                    }
+                }
+            }
+
+            goalTrackerActionsToSave.add(goalTrackerAction);
         }
+
+        // Save or update the tracker action value
+        goalTrackerActionRepository.saveAll(goalTrackerActionsToSave);
+
+        // Update the overall tracker status and rating based on counts of red and orange ratings
         goalTracker.setStatus(Status.IN_PROGRESS);
-        if(redRatingCount >= 2 || (redRatingCount == 1 && orangeRatingCount >= 2)){
+        if (redRatingCount >= 2 || (redRatingCount == 1 && orangeRatingCount >= 2)) {
             goalTracker.setRating(Rating.RED);
-        }
-        if((redRatingCount == 1 && orangeRatingCount <= 1) || (redRatingCount == 0 && orangeRatingCount >= 1)){
+        } else if ((redRatingCount == 1 && orangeRatingCount <= 1) || (redRatingCount == 0 && orangeRatingCount >= 1)) {
             goalTracker.setRating(Rating.YELLOW);
-        }
-        else {
+        } else {
             goalTracker.setRating(Rating.GREEN);
         }
+
         goalTrackerMasterRepository.save(goalTracker);
     }
+
+    @Override
+    // Method to retrieve all projects with their latest goal trackers
+    public List<ProjectWithGoalTrackerDTO> getAllProjectsWithGoalTrackers(TemplateTypes templateType) {
+        // Fetch all projects
+        List<Project> projects = projectRepository.findByTemplateType(templateType); // Filter by templateType if required
+
+        List<ProjectWithGoalTrackerDTO> projectDTOs = new ArrayList<>();
+
+        for (Project project : projects) {
+            // Fetch the latest tracker for the current project (where isLatest = 1)
+            GoalTrackerMaster latestTracker = goalTrackerMasterRepository
+                    .findByProject_ProjectIdAndIsLatest(project.getProjectId(),true);
+
+            if (latestTracker != null) {
+                // Fetch associated actions for the latest tracker
+                List<GoalTrackerActionDTO> actions = fetchActionsForTracker(latestTracker.getTrackerId());
+
+                // Create GoalTrackerDTO with tracker and its actions
+                GoalTrackerDTO goalTrackerDTO = new GoalTrackerDTO(latestTracker, actions);
+
+                // Create the ProjectWithGoalTrackerDTO
+                ProjectWithGoalTrackerDTO projectWithGoalTrackerDTO = new ProjectWithGoalTrackerDTO(
+                        project.getProjectId(),
+                        project.getProjectName(),
+                        project.getTemplateType() != null ? project.getTemplateType().toString() : null,
+                        Collections.singletonList(goalTrackerDTO)
+                );
+
+                projectDTOs.add(projectWithGoalTrackerDTO);
+            }
+        }
+
+        return projectDTOs;
+    }
+
+
 
     private String calculateRating(String actionValue, TemplateAction action) {
         String benchmarkValue = action.getBenchmarkValue();
@@ -218,4 +288,7 @@ public class TrackerServiceImpl implements TrackerService {
         }
     }
 
+    private List<GoalTrackerActionDTO> fetchActionsForTracker(int trackerId) {
+        return goalTrackerActionRepository.findActionsByTrackerId(trackerId);
+    }
 }

@@ -13,6 +13,8 @@ public class GoalTrackerActionDTO {
     // Fields from GoalTrackerAction
     private String actionValue;
     private String actionRating;
+    private Boolean isNotApplicable;  // Add the is_not_applicable field
+    private String attachedDocument;
 
     // Fields from TemplateAction
     private int actionId;
@@ -27,11 +29,13 @@ public class GoalTrackerActionDTO {
     private LocalDateTime createdAt;
 
     // Constructor to populate from entities
-    public GoalTrackerActionDTO(String actionValue, Rating actionRating, TemplateAction templateAction) {
+    public GoalTrackerActionDTO(String actionValue, Rating actionRating,Boolean isNotApplicable, String attachedDocument, TemplateAction templateAction) {
         this.actionValue = actionValue;
 
         // Convert Rating enum to String only if it's an enum; leave null if Rating is null
         this.actionRating = actionRating != null ? actionRating.toString() : null;
+        this.isNotApplicable = isNotApplicable;
+        this.attachedDocument = attachedDocument;
 
         // Fields from TemplateAction (direct assignment if they are already Strings)
         this.actionId = templateAction.getActionId();

@@ -30,4 +30,7 @@ public class GoalTrackerAction {
     @Enumerated(EnumType.STRING)
     private Rating actionRating;
 
+    private Boolean isNotApplicable;
+    private String attachedDocument;
+
 }
