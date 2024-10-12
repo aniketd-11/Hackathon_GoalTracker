@@ -72,11 +72,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                 className={`w-full justify-start  gap-2 ${
                   isSidebarCollapsed ? "px-2" : "px-4"
                 }`}
+                onClick={handleRedirect}
               >
                 <LayoutDashboard />
-                {!isSidebarCollapsed && (
-                  <span onClick={handleRedirect}>Dashboard</span>
-                )}
+                {!isSidebarCollapsed && <span>Dashboard</span>}
               </Button>
             </li>
             <li>

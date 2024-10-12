@@ -4,7 +4,6 @@
 import React, { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 import {
   Select,
   SelectContent,
@@ -28,7 +27,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import Link from "next/link";
+
+import { useAppDispatch } from "@/redux/hooks";
+import {
+  setTrackerId,
+  setTrackerStatus,
+} from "@/redux/slices/trackerDetailsSlice";
+import { useRouter } from "next/navigation";
+import { EllipsisVertical } from "lucide-react";
 
 type GoalTracker = {
   trackerId: number;
@@ -53,6 +59,8 @@ const ProfessionalDashboard = () => {
   const [template, setTemplate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = 8;
+  const dispatch = useAppDispatch();
+  const route = useRouter();
 
   // Check if user is authenticated
   const user = useAppSelector((state: RootState) => state.auth.user);
@@ -79,6 +87,12 @@ const ProfessionalDashboard = () => {
       console.log("Error fetching accounts:", error);
     }
   }
+
+  const handleRedirect = (status: string, id: number) => {
+    dispatch(setTrackerId(id));
+    dispatch(setTrackerStatus(status));
+    route.push("/fill-goal-details");
+  };
 
   return (
     <>
@@ -215,9 +229,17 @@ const ProfessionalDashboard = () => {
                                             <TooltipProvider>
                                               <Tooltip>
                                                 <TooltipTrigger>
-                                                  <Link href="/fill-goal-details">
-                                                    <ExternalLink className="text-gray-500 w-4 h-4 cursor-pointer" />
-                                                  </Link>
+                                                  <div>
+                                                    <ExternalLink
+                                                      className="text-gray-500 w-4 h-4 cursor-pointer"
+                                                      onClick={() =>
+                                                        handleRedirect(
+                                                          tracker?.status,
+                                                          tracker?.trackerId
+                                                        )
+                                                      }
+                                                    />
+                                                  </div>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                   <p>Fill tracker details</p>
@@ -291,6 +313,11 @@ const ProfessionalDashboard = () => {
                                             : "-"}
                                         </div>
                                       </td>
+                                      {tracker?.status === "IN_PROGRESS" && (
+                                        <td className="table-cell">
+                                          <EllipsisVertical className="text-sm text-blue-700 h-5 w-5" />
+                                        </td>
+                                      )}
                                     </tr>
                                   )
                                 );

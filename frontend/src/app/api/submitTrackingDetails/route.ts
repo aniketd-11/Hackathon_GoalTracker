@@ -1,29 +1,30 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
-export async function POST(request: Request) {
-  const { formattedGoals, trackerId } = await request.json();
+export async function POST(request: NextRequest) {
+  const formData = await request.formData();
+  const trackerId = formData.get("trackerId");
+  const actionValueDTOsJson = formData.get("actionValueDTOsJson");
+  console.log(actionValueDTOsJson);
 
   try {
     const response = await axios.post(
       `${process.env.BACKEND_API}/tracker/add-trackerActionValue?trackerId=${trackerId}`,
-
-      formattedGoals,
-
+      { actionValueDTOsJson },
       {
         headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store", // Ensure no caching
+          "Content-Type": "multipart/form-data",
+          "Cache-Control": "no-store",
         },
       }
     );
 
-    // Axios does not have 'ok', so we check the status directly
     if (response.status !== 200) {
-      throw new Error("Login failed");
+      throw new Error("Submission failed");
     }
+    console.log(response);
 
-    const data = response.data; // Axios already parses the response data
+    const data = response.data;
 
     return NextResponse.json({
       response: data,
@@ -31,9 +32,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.log(error);
-    return NextResponse.json(
-      { error: "Invalid email or password" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Submission error" }, { status: 401 });
   }
 }

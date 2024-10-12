@@ -22,6 +22,7 @@ export default function LoginPage() {
     (state: any) => state.auth.user !== null
   );
 
+  const user = useAppSelector((state: any) => state.auth.user);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -59,7 +60,11 @@ export default function LoginPage() {
   // Effect to redirect to translation list page if authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard/accounts");
+      if (user?.roleName === "DM") {
+        router.replace(`/dashboard/projects`);
+      } else {
+        router.replace("/dashboard/accounts");
+      }
     }
   }, [isAuthenticated]);
 

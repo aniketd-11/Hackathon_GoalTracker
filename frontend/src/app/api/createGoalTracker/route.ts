@@ -4,8 +4,6 @@ import axios from "axios";
 export async function POST(request: Request) {
   const req = await request.json();
 
-  console.log(req);
-
   try {
     const response = await axios.post(
       `${process.env.BACKEND_API}/tracker/create-tracker`,
