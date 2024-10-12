@@ -44,7 +44,7 @@ public class TrackerController {
     public ResponseEntity<?> createGoalTracker(@RequestBody GoalTrackerRequestDTO dto) {
         try {
             GoalTrackerMaster goalTracker = trackerService.addGoalTracker(dto);
-            return ResponseEntity.ok(goalTracker.getTrackerId());
+            return ResponseEntity.status(HttpStatus.OK).body("TrackerID: " + goalTracker.getTrackerId());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error occurred while creating Goal Tracker: " + e.getMessage());
