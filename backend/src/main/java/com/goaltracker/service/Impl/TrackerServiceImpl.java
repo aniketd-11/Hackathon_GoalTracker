@@ -40,7 +40,6 @@ public class TrackerServiceImpl implements TrackerService {
     @Override
     public GoalTrackerMaster addGoalTracker(GoalTrackerRequestDTO dto) {
         try {
-            // Fetch project entity based on projectId from DTO using Java 8 Optional
             Project project = projectRepository.findById(dto.getProjectId())
                     .orElseThrow(() -> new RuntimeException("Project with ID " + dto.getProjectId() + " not found"));
 
@@ -101,7 +100,7 @@ public class TrackerServiceImpl implements TrackerService {
                 .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
 
         int redRatingCount = 0, orangeRatingCount = 0;
-
+        List<GoalTrackerAction> goalTrackerActionsToSave = new ArrayList<>();
         for (ActionValueDTO dto : actionValueDTO) {
             TemplateAction action = templateActionsRepository.findById(dto.getActionId())
                     .orElseThrow(() -> new RuntimeException("Action ID " + dto.getActionId() + " not found"));
@@ -156,9 +155,11 @@ public class TrackerServiceImpl implements TrackerService {
                 }
             }
 
-            // Save or update the tracker action value
-            goalTrackerActionRepository.save(goalTrackerAction);
+            goalTrackerActionsToSave.add(goalTrackerAction);
         }
+
+        // Save or update the tracker action value
+        goalTrackerActionRepository.saveAll(goalTrackerActionsToSave);
 
         // Update the overall tracker status and rating based on counts of red and orange ratings
         goalTracker.setStatus(Status.IN_PROGRESS);

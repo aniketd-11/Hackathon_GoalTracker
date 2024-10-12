@@ -11,6 +11,8 @@ CREATE TABLE goal_tracker_action (
     action_id INT NOT NULL,
     action_value VARCHAR(255),
     action_rating ENUM('RED', 'ORANGE', 'GREEN'),
+    attached_document VARCHAR(255),
+    is_not_applicable TINYINT(1),
     FOREIGN KEY (tracker_id) REFERENCES goal_tracker_master(tracker_id),
     FOREIGN KEY (action_id) REFERENCES template_actions(action_id)
 );
