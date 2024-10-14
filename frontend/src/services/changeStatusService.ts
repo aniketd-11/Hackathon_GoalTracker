@@ -1,20 +1,13 @@
 "use client";
-export async function createGoalTracker(data: {
-  goalTrackerName: string;
-  type: string;
-  startDate: string | undefined;
-  endDate: string | undefined;
-  projectId: number | undefined;
-  isLatest: boolean;
-}) {
+export async function changeStatusServise(trackerId: number, status: string) {
   try {
-    const response = await fetch(`/api/createGoalTracker`, {
+    const response = await fetch(`/api/changeStatus`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-store", // Ensure no caching
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ trackerId, status }),
     });
 
     // Check if the request was successful

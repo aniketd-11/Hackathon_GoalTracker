@@ -4,15 +4,15 @@ import https from "https";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { accountId: number } }
+  { params }: { params: { trackerId: number } }
 ) {
   try {
-    const accountId = params.accountId;
+    const trackerId = params.trackerId;
 
-    const api = `${process.env.BACKEND_API}/dashboard/qn/projects?accountId=${accountId}`;
-    console.log(api);
+    const api = `${process.env.BACKEND_API}/tracker/getGoalTrackerWithActionsById`;
 
     const response = await axios.get(api, {
+      params: { trackerId },
       httpsAgent: new https.Agent({ rejectUnauthorized: false }),
       headers: {
         "Content-Type": "application/json",
@@ -20,17 +20,9 @@ export async function GET(
       },
     });
 
-    // Check if the response was successful
-    if (response.status !== 200) {
-      throw new Error("Error occurred while fetching accounts");
-    }
-
-    // Axios already parses the response data
-    const data = response.data;
-
     // Return the response as JSON
     return NextResponse.json({
-      data: data,
+      data: response.data,
       status: 200,
     });
   } catch (error) {
