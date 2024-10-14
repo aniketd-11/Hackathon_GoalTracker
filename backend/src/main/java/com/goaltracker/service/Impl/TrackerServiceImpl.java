@@ -95,6 +95,14 @@ public class TrackerServiceImpl implements TrackerService {
     }
 
     @Override
+    public void updateGoalTrackerRating(int trackerId, Rating rating){
+        GoalTrackerMaster goalTracker = goalTrackerMasterRepository.findById(trackerId)
+                .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
+        goalTracker.setRating(rating);
+        goalTrackerMasterRepository.save(goalTracker);
+    }
+
+    @Override
     public void addTrackerActionValues(List<ActionValueDTO> actionValueDTO, int trackerId, Map<Integer, MultipartFile> actionIdToFileMap) {
         GoalTrackerMaster goalTracker = goalTrackerMasterRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));

@@ -5,10 +5,7 @@ import com.goaltracker.dto.ActionValueDTO;
 import com.goaltracker.dto.GoalTrackerDTO;
 import com.goaltracker.dto.GoalTrackerRequestDTO;
 import com.goaltracker.dto.ProjectWithGoalTrackerDTO;
-import com.goaltracker.model.GoalTrackerMaster;
-import com.goaltracker.model.Status;
-import com.goaltracker.model.TemplateAction;
-import com.goaltracker.model.TemplateTypes;
+import com.goaltracker.model.*;
 import com.goaltracker.service.Interface.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -128,6 +125,17 @@ public class TrackerController {
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PutMapping("/{trackerId}/rating")
+    public ResponseEntity<?> updateTrackerRating(@PathVariable int trackerId, @RequestBody Rating rating){
+        try {
+            trackerService.updateGoalTrackerRating(trackerId, rating);
+            return ResponseEntity.ok("Rating updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating rating: " + e.getMessage());
         }
     }
 }
