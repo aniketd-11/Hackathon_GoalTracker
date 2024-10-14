@@ -3,14 +3,27 @@ import axios from "axios";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
+
+  console.log(formData);
+  // Retrieve trackerId and actionValueDTOsJson from formData
   const trackerId = formData.get("trackerId");
-  const actionValueDTOsJson = formData.get("actionValueDTOsJson");
-  console.log(actionValueDTOsJson);
+  // Create a new FormData instance to store the filtered data
+  const filteredFormData = new FormData();
+
+  // Loop through the original formData and append all entries except trackerId
+  formData.forEach((value, key) => {
+    if (key !== "trackerId") {
+      filteredFormData.append(key, value); // Add only keys that are not trackerId
+    }
+  });
+
+  // Now `filteredFormData` contains all form data except trackerId
+  console.log("Filtered FormData: ", filteredFormData);
 
   try {
     const response = await axios.post(
       `${process.env.BACKEND_API}/tracker/add-trackerActionValue?trackerId=${trackerId}`,
-      { actionValueDTOsJson },
+      filteredFormData, // Send the new formData with files
       {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -22,9 +35,9 @@ export async function POST(request: NextRequest) {
     if (response.status !== 200) {
       throw new Error("Submission failed");
     }
-    console.log(response);
 
     const data = response.data;
+    console.log(data);
 
     return NextResponse.json({
       response: data,

@@ -2,21 +2,41 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  ChevronDown,
+  ChevronUp,
+  EllipsisVertical,
+  ExternalLink,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+
 import SidebarLayout from "@/app/sidebar-layout";
 import Layout from "@/components/Layout/Layout";
 import { getProjectsForQN } from "@/services/projectsServiceQN";
 import Skeleton from "@/components/LoadingSkeleton/Skeleton";
 import dynamic from "next/dynamic";
 import TableHeading from "@/components/Projects/Static/TableHeading";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { changeStatusServise } from "@/services/changeStatusService";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  setTrackerId,
+  setTrackerStatus,
+} from "@/redux/slices/trackerDetailsSlice";
+import { useAppDispatch } from "@/redux/hooks";
+import { useRouter } from "next/navigation";
+import SelectProject from "@/components/Projects/CreateGoalDialog/SelectProject";
+import SelectTemplate from "@/components/Projects/CreateGoalDialog/SelectTemplate";
 
 type GoalTracker = {
   trackerId: number;
@@ -38,10 +58,43 @@ type Project = {
 const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
   const [Isloading, setIsLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
+  const [isFiltered, setIsFiltered] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [template, setTemplate] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const route = useRouter();
 
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    // Apply filters when either selectedProject or template changes
+    applyFilters();
+  }, [selectedProject, template]);
+
+  const applyFilters = () => {
+    let filtered = [...projects];
+
+    if (selectedProject) {
+      filtered = filtered.filter(
+        (project) => project.projectId === selectedProject.id
+      );
+    }
+
+    if (template) {
+      filtered = filtered.filter(
+        (project) => project.templateType === template
+      );
+    }
+
+    setFilteredProjects(filtered);
+    setIsFiltered(selectedProject !== null || template !== null);
+  };
 
   async function fetchProjects() {
     try {
@@ -65,6 +118,35 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = 8;
 
+  const getColorClass = (rating: string) => {
+    switch (rating) {
+      case "GREEN":
+        return "bg-green-500";
+      case "YELLOW":
+        return "bg-yellow-500";
+      case "RED":
+        return "bg-red-500";
+      default:
+        return ""; // Default if the rating doesn't match
+    }
+  };
+
+  const changeStatus = async (trackerId: number, status: string) => {
+    const response = await changeStatusServise(trackerId, status);
+
+    fetchProjects();
+  };
+
+  const handleRedirect = (status: string, id: number) => {
+    dispatch(setTrackerId(id));
+    dispatch(setTrackerStatus(status));
+    if (status === "IN_REVIEW") {
+      route.push("/view-goal-details");
+    } else {
+      route.push("/fill-goal-details");
+    }
+  };
+
   return (
     <>
       <Layout>
@@ -80,29 +162,12 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
                 ) : (
                   <>
                     <div className="flex flex-wrap justify-start gap-3">
-                      <Select>
-                        <SelectTrigger className="w-44 bg-blue-50 border-blue-200 hover:border-blue-300 focus:ring-blue-500">
-                          <SelectValue placeholder="All Projects" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="fixed">Fixed bid</SelectItem>
-                          <SelectItem value="t&m">T & M</SelectItem>
-                          <SelectItem value="staffing">Staffing</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select>
-                        <SelectTrigger className="w-44 bg-blue-50 border-blue-200 hover:border-blue-300 focus:ring-blue-500">
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="in-progress">
-                            In progress
-                          </SelectItem>
-                          <SelectItem value="in-review">In review</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <SelectProject
+                        projects={projects}
+                        setSelectedProject={setSelectedProject}
+                        selectedProject={selectedProject}
+                      />
+                      <SelectTemplate setTemplate={setTemplate} />
                       <Button
                         variant="outline"
                         className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 hover:border-blue-300"
@@ -116,83 +181,28 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
                           <table className="min-w-full divide-y divide-blue-200 ">
                             <TableHeading />
                             <tbody className="bg-white divide-y divide-blue-200">
-                              {projects.map((project) => {
-                                // If no goalTrackers, display a single row with placeholders
-                                if (project.goalTrackers.length === 0) {
-                                  return (
-                                    <tr
-                                      key={project.projectId}
-                                      className="hover:bg-blue-50 transition-colors duration-150 ease-in-out"
-                                    >
-                                      <td className="table-cell">
-                                        <div className="flex items-center">
-                                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                          <div className="ml-4">
-                                            <div className="text-sm font-medium text-blue-900">
-                                              {project?.projectName}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </td>
-                                      <td className="table-cell text-sm text-blue-700">
-                                        -
-                                      </td>
-                                      <td className="table-cell text-sm text-blue-700">
-                                        {(() => {
-                                          switch (project.templateType) {
-                                            case "T_M":
-                                              return "T & M";
-                                            case "FIXED_BID":
-                                              return "Fixed bid";
-                                            case "STAFFING":
-                                              return "Staffing";
-                                            default:
-                                              return (
-                                                project.templateType || "-"
-                                              ); // Fallback if no match
-                                          }
-                                        })()}
-                                      </td>
-                                      <td className="table-cell text-sm text-blue-700">
-                                        -
-                                      </td>
-                                      <td className="table-cell text-sm text-blue-700">
-                                        -
-                                      </td>
-                                      <td className="table-cell text-sm text-blue-700">
-                                        -
-                                      </td>
-                                    </tr>
-                                  );
-                                }
-
-                                // Map over goalTrackers if they exist
-                                return project.goalTrackers.map(
-                                  (tracker, index) => (
-                                    <tr
-                                      key={tracker.trackerId}
-                                      className="hover:bg-blue-50 transition-colors duration-150 ease-in-out"
-                                    >
-                                      {/* Display projectName only in the first row of each project's goal trackers */}
-                                      <td className="table-cell">
-                                        {index === 0 && (
+                              {(isFiltered ? filteredProjects : projects).map(
+                                (project) => {
+                                  // If no goalTrackers, display a single row with placeholders
+                                  if (project.goalTrackers.length === 0) {
+                                    return (
+                                      <tr
+                                        key={project.projectId}
+                                        className="hover:bg-blue-50 transition-colors duration-150 ease-in-out"
+                                      >
+                                        <td className="table-cell">
                                           <div className="flex items-center">
-                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
                                             <div className="ml-4">
                                               <div className="text-sm font-medium text-blue-900">
                                                 {project?.projectName}
                                               </div>
                                             </div>
                                           </div>
-                                        )}
-                                      </td>
-                                      <td className="table-cell">
-                                        <div className="text-sm text-blue-700">
-                                          {tracker.goalTrackerName || "-"}
-                                        </div>
-                                      </td>
-                                      <td className="table-cell">
-                                        <div className="text-sm text-blue-700">
+                                        </td>
+                                        <td className="table-cell text-sm text-blue-700">
+                                          -
+                                        </td>
+                                        <td className="table-cell text-sm text-blue-700">
                                           {(() => {
                                             switch (project.templateType) {
                                               case "T_M":
@@ -207,103 +217,220 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
                                                 ); // Fallback if no match
                                             }
                                           })()}
-                                        </div>
-                                      </td>
-                                      <td className="table-cell">
-                                        <span className="text-sm text-blue-700">
-                                          {(() => {
-                                            switch (tracker.status) {
-                                              case "INITIATED":
-                                                return "Initiated";
-                                              case "IN_REVIEW":
-                                                return "In Review";
-                                              case "IN_PROGRESS":
-                                                return "In Progress";
-                                              case "IN_CLOSURE":
-                                                return "In Closure";
-                                              case "CLOSED":
-                                                return "Closed";
-                                              default:
-                                                return "No status";
-                                            }
-                                          })()}
-                                        </span>
-                                      </td>
-                                      <td className="table-cell">
-                                        <div className="text-sm text-blue-700">
-                                          {tracker.startDate
-                                            ? new Date(
-                                                tracker.startDate
-                                              ).toLocaleDateString("en-GB", {
-                                                day: "2-digit",
-                                                month: "short",
-                                                year: "numeric",
-                                              })
-                                            : "-"}
-                                        </div>
-                                      </td>
-                                      <td className="table-cell">
-                                        <div className="text-sm text-blue-700">
-                                          {tracker.endDate
-                                            ? new Date(
-                                                tracker.endDate
-                                              ).toLocaleDateString("en-GB", {
-                                                day: "2-digit",
-                                                month: "short",
-                                                year: "numeric",
-                                              })
-                                            : "-"}
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  )
-                                );
-                              })}
+                                        </td>
+                                        <td className="table-cell text-sm text-blue-700">
+                                          -
+                                        </td>
+                                        <td className="table-cell text-sm text-blue-700">
+                                          -
+                                        </td>
+                                        <td className="table-cell text-sm text-blue-700">
+                                          -
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+
+                                  // Map over goalTrackers if they exist
+                                  return project.goalTrackers.map(
+                                    (tracker, index) => (
+                                      <tr
+                                        key={tracker.trackerId}
+                                        className="hover:bg-blue-50 transition-colors duration-150 ease-in-out"
+                                      >
+                                        {/* Display projectName only in the first row of each project's goal trackers */}
+                                        <td className="table-cell">
+                                          {index === 0 && (
+                                            <div className="flex items-center">
+                                              <div className="ml-4">
+                                                <div className="text-sm font-medium text-blue-900">
+                                                  {project?.projectName}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </td>
+                                        <td className="table-cell">
+                                          <div className="text-sm text-blue-700 flex items-center gap-2">
+                                            <div
+                                              className={`w-2 h-2 rounded-full ${getColorClass(
+                                                tracker?.rating
+                                              )}`}
+                                            ></div>
+                                            {tracker.goalTrackerName || "-"}
+                                            {tracker?.status ===
+                                              "IN_REVIEW" && (
+                                              <TooltipProvider>
+                                                <Tooltip>
+                                                  <TooltipTrigger>
+                                                    <div>
+                                                      <ExternalLink
+                                                        className="text-gray-500 w-4 h-4 cursor-pointer"
+                                                        onClick={() =>
+                                                          handleRedirect(
+                                                            tracker?.status,
+                                                            tracker?.trackerId
+                                                          )
+                                                        }
+                                                      />
+                                                    </div>
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>
+                                                    <p>Fill tracker details</p>
+                                                  </TooltipContent>
+                                                </Tooltip>
+                                              </TooltipProvider>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td className="table-cell">
+                                          <div className="text-sm text-blue-700">
+                                            {(() => {
+                                              switch (project.templateType) {
+                                                case "T_M":
+                                                  return "T & M";
+                                                case "FIXED_BID":
+                                                  return "Fixed bid";
+                                                case "STAFFING":
+                                                  return "Staffing";
+                                                default:
+                                                  return (
+                                                    project.templateType || "-"
+                                                  ); // Fallback if no match
+                                              }
+                                            })()}
+                                          </div>
+                                        </td>
+                                        <td className="table-cell">
+                                          <span className="text-sm text-blue-700">
+                                            {(() => {
+                                              switch (tracker.status) {
+                                                case "INITIATED":
+                                                  return "Initiated";
+                                                case "IN_REVIEW":
+                                                  return "In Review";
+                                                case "IN_PROGRESS":
+                                                  return "In Progress";
+                                                case "IN_CLOSURE":
+                                                  return "In Closure";
+                                                case "CLOSED":
+                                                  return "Closed";
+                                                default:
+                                                  return "No status";
+                                              }
+                                            })()}
+                                          </span>
+                                        </td>
+                                        <td className="table-cell">
+                                          <div className="text-sm text-blue-700">
+                                            {tracker.startDate
+                                              ? new Date(
+                                                  tracker.startDate
+                                                ).toLocaleDateString("en-GB", {
+                                                  day: "2-digit",
+                                                  month: "short",
+                                                  year: "numeric",
+                                                })
+                                              : "-"}
+                                          </div>
+                                        </td>
+                                        <td className="table-cell">
+                                          <div className="text-sm text-blue-700">
+                                            {tracker.endDate
+                                              ? new Date(
+                                                  tracker.endDate
+                                                ).toLocaleDateString("en-GB", {
+                                                  day: "2-digit",
+                                                  month: "short",
+                                                  year: "numeric",
+                                                })
+                                              : "-"}
+                                          </div>
+                                        </td>
+
+                                        {tracker?.status === "IN_REVIEW" && (
+                                          <td className="table-cell">
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger>
+                                                <EllipsisVertical className="text-sm text-blue-700 h-5 w-5 outline-none" />
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent>
+                                                <DropdownMenuItem
+                                                  onClick={() =>
+                                                    changeStatus(
+                                                      tracker?.trackerId,
+                                                      "IN_PROGRESS"
+                                                    )
+                                                  }
+                                                >
+                                                  Change status to In progress
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                  onClick={() =>
+                                                    changeStatus(
+                                                      tracker?.trackerId,
+                                                      "CLOSED"
+                                                    )
+                                                  }
+                                                >
+                                                  Change status to Closed
+                                                </DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                          </td>
+                                        )}
+                                      </tr>
+                                    )
+                                  );
+                                }
+                              )}
                             </tbody>
                           </table>
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-center items-center space-x-2 mt-4">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                        className="pagination-button"
-                      >
-                        <ChevronUp className="h-4 w-4" />
-                      </Button>
-                      {[...Array(totalPages)].map((_, i) => (
+                    {projects?.length > 10 && (
+                      <div className="flex justify-center items-center space-x-2 mt-4">
                         <Button
-                          key={i}
-                          variant={
-                            currentPage === i + 1 ? "default" : "outline"
+                          variant="outline"
+                          size="icon"
+                          onClick={() =>
+                            setCurrentPage((prev) => Math.max(prev - 1, 1))
                           }
-                          className={`px-3 py-1 ${
-                            currentPage === i + 1
-                              ? "bg-blue-600 text-white"
-                              : "text-blue-600 hover:bg-blue-100"
-                          }`}
-                          onClick={() => setCurrentPage(i + 1)}
+                          className="pagination-button"
                         >
-                          {i + 1}
+                          <ChevronUp className="h-4 w-4" />
                         </Button>
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages)
-                          )
-                        }
-                        className="pagination-button"
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        {[...Array(totalPages)].map((_, i) => (
+                          <Button
+                            key={i}
+                            variant={
+                              currentPage === i + 1 ? "default" : "outline"
+                            }
+                            className={`px-3 py-1 ${
+                              currentPage === i + 1
+                                ? "bg-blue-600 text-white"
+                                : "text-blue-600 hover:bg-blue-100"
+                            }`}
+                            onClick={() => setCurrentPage(i + 1)}
+                          >
+                            {i + 1}
+                          </Button>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() =>
+                            setCurrentPage((prev) =>
+                              Math.min(prev + 1, totalPages)
+                            )
+                          }
+                          className="pagination-button"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

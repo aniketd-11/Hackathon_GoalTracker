@@ -1,6 +1,7 @@
 export async function submitTrackingDetails({
   formattedGoals,
   trackerId,
+  fileUploads, // Add fileUploads as a parameter
 }: {
   formattedGoals: {
     actionId: number;
@@ -8,11 +9,21 @@ export async function submitTrackingDetails({
     isNotApplicable: boolean;
   }[];
   trackerId: number;
+  fileUploads: { [key: string]: File }; // Add type for fileUploads
 }) {
   try {
     const formData = new FormData();
+
+    // Add the formattedGoals
     formData.append("actionValueDTOsJson", JSON.stringify(formattedGoals));
+
+    // Add the trackerId
     formData.append("trackerId", trackerId.toString());
+
+    // Append file uploads with their correct keys
+    Object.entries(fileUploads).forEach(([key, file]) => {
+      formData.append(key, file); // Append the actual File object
+    });
 
     const response = await fetch(`/api/submitTrackingDetails`, {
       method: "POST",

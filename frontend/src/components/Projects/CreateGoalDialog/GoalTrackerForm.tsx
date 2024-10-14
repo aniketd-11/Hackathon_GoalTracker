@@ -56,7 +56,8 @@ export function GoalTrackerForm({
     name: string;
   } | null>(null);
 
-  const [template, setTemplate] = useState("");
+  const [template, setTemplate] = useState<string | null>(null);
+
   const [startDate, setStartDate] = useState<Date | null>(null); // Initialize with null
   const [endDate, setEndDate] = useState<Date | null>(null); // Initialize with null
   const [isLatestTracker, setIsLatestTracker] = useState(false);
@@ -138,9 +139,13 @@ export function GoalTrackerForm({
                 projects={projects}
                 setSelectedProject={setSelectedProject}
                 selectedProject={selectedProject}
+                page="goalTrackerForm"
               />
 
-              <SelectTemplate setTemplate={setTemplate} />
+              <SelectTemplate
+                setTemplate={setTemplate}
+                page="goalTrackerForm"
+              />
             </div>
 
             <div className="grid grid-cols-2 items-center gap-4">
