@@ -221,7 +221,7 @@ const GoalDetailsForm = () => {
   const handleProofUpload = (file: File) => {
     if (currentActionId !== null) {
       const [stepIndex, actionId] = currentActionId.split(".");
-      setValue(`steps.${stepIndex}.${actionId}.attachedDocument`, file.name);
+      setValue(`steps.${stepIndex}.${actionId}.attachedDocument`, file);
       setOpenDialog(false);
     }
   };

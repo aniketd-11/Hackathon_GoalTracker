@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import https from "https";
 
 export async function POST(request: Request) {
   const req = await request.json();
@@ -11,6 +12,7 @@ export async function POST(request: Request) {
       req,
 
       {
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-store", // Ensure no caching

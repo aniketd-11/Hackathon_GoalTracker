@@ -145,7 +145,9 @@ const ViewGoalDetails = () => {
   }
 
   const handleViewAttachedDocument = (document: string | null) => {
-    setCurrentImage(`/api/images/${encodeURIComponent(document)}`);
+    let imageUrl = document?.split("uploads\\")[1];
+    // console.log(imageUrl);
+    setCurrentImage(`http://localhost:8080/uploads/${imageUrl}`);
     setShowImageDialog(true);
   };
 
@@ -281,7 +283,8 @@ const ViewGoalDetails = () => {
               <img
                 src={currentImage}
                 alt="Attached Document"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain cursor-pointer "
+                onClick={() => window.open(currentImage, "_blank")}
               />
             </div>
           )}
