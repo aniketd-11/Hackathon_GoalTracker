@@ -158,8 +158,8 @@ const ViewGoalDetails = () => {
   }
 
   const handleViewAttachedDocument = (document: string | null) => {
-    let imageUrl = document?.split("uploads/")[1];
-    setCurrentImage(`https://goaltrackerbackend.onrender.com/uploads/${imageUrl}`);
+    let imageUrl = document?.split("uploads\\")[1];
+    setCurrentImage(`http://localhost:8080/uploads/${imageUrl}`);
     setShowImageDialog(true);
   };
 
