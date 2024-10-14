@@ -22,6 +22,9 @@ const TableHeading = () => {
         <th scope="col" className="table-header">
           Due date
         </th>
+        <th scope="col" className="table-header">
+          Actions
+        </th>
       </tr>
     </thead>
   );

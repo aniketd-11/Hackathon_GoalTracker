@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import https from "https";
 
 export async function GET() {
   try {
     const response = await axios.get(
       `${process.env.BACKEND_API}/dashboard/qn/accounts`,
       {
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-store", // Ensure no caching

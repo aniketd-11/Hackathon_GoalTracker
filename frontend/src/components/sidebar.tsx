@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { logout } from "@/redux/slices/authSlice";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface SidebarProps {
   isSidebarCollapsed: boolean;
@@ -37,12 +37,17 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
 
   // Check if user is authenticated
   const user = useAppSelector((state: { auth: AuthState }) => state.auth.user);
 
   const handleLogout = () => {
     dispatch(logout());
+  };
+
+  const handleRedirectReports = () => {
+    router.push("/reports");
   };
 
   const handleRedirect = () => {
@@ -66,25 +71,37 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Navigation Links */}
         <nav className="flex-grow p-3">
           <ul className="space-y-6 ">
-            <li className="border-l-4 border-l-blue-700 rounded-sm">
+            <li
+              className={` ${
+                pathname === "/reports"
+                  ? ""
+                  : "border-l-4 border-l-blue-700 rounded-sm"
+              }`}
+            >
               <Button
                 variant="ghost"
                 className={`w-full justify-start  gap-2 ${
                   isSidebarCollapsed ? "px-2" : "px-4"
                 }`}
+                onClick={handleRedirect}
               >
                 <LayoutDashboard />
-                {!isSidebarCollapsed && (
-                  <span onClick={handleRedirect}>Dashboard</span>
-                )}
+                {!isSidebarCollapsed && <span>Dashboard</span>}
               </Button>
             </li>
-            <li>
+            <li
+              className={` ${
+                pathname === "/reports"
+                  ? "border-l-4 border-l-blue-700 rounded-sm"
+                  : ""
+              }`}
+            >
               <Button
                 variant="ghost"
                 className={`w-full justify-start  gap-2 ${
                   isSidebarCollapsed ? "px-2" : "px-4"
                 }`}
+                onClick={handleRedirectReports}
               >
                 <ChartPie />
                 {!isSidebarCollapsed && <span>Reports</span>}
