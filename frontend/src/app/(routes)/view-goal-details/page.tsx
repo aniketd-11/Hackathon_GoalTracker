@@ -145,7 +145,8 @@ const ViewGoalDetails = () => {
   }
 
   const handleViewAttachedDocument = (document: string | null) => {
-    setCurrentImage(`/api/images/${encodeURIComponent(document)}`);
+    let imageUrl = document?.split("uploads\\")[1];
+    setCurrentImage(`/api/images/}`);
     setShowImageDialog(true);
   };
 
