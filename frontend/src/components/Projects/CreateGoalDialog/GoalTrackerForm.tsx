@@ -21,7 +21,18 @@ import SelectTemplate from "./SelectTemplate";
 import SelectProject from "./SelectProject";
 import { createGoalTracker } from "@/services/createGoalTracker";
 import { useAppDispatch } from "@/redux/hooks";
-import { setTrackerId } from "@/redux/slices/trackerDetailsSlice";
+import {
+  setTrackerId,
+  setTrackerStatus,
+} from "@/redux/slices/trackerDetailsSlice";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 type Project = {
   projectId: number;
@@ -45,10 +56,11 @@ export function GoalTrackerForm({
     name: string;
   } | null>(null);
 
-  const [template, setTemplate] = useState("");
+  const [template, setTemplate] = useState<string | null>(null);
+
   const [startDate, setStartDate] = useState<Date | null>(null); // Initialize with null
   const [endDate, setEndDate] = useState<Date | null>(null); // Initialize with null
-
+  const [isLatestTracker, setIsLatestTracker] = useState(false);
   const [openPicker, setOpenPicker] = useState(""); // "start" or "end"
   const router = useRouter(); // For redirection
 
@@ -81,12 +93,13 @@ export function GoalTrackerForm({
       startDate: startDate?.toISOString(),
       endDate: endDate?.toISOString(),
       projectId: selectedProject?.id,
+      isLatest: isLatestTracker,
     });
 
-    console.log(response);
     if (response?.trackerId) {
       router.push("/fill-goal-details"); // Replace "/success" with the actual route
       dispatch(setTrackerId(response?.trackerId));
+      dispatch(setTrackerStatus("INITIATED"));
       fetchProjects();
     }
 
@@ -126,9 +139,39 @@ export function GoalTrackerForm({
                 projects={projects}
                 setSelectedProject={setSelectedProject}
                 selectedProject={selectedProject}
+                page="goalTrackerForm"
               />
 
-              <SelectTemplate setTemplate={setTemplate} />
+              <SelectTemplate
+                setTemplate={setTemplate}
+                page="goalTrackerForm"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Select onValueChange={setTrackerType}>
+                <SelectTrigger className="w-full bg-blue-50 border-blue-200 hover:border-blue-300 focus:ring-blue-500">
+                  <SelectValue placeholder="Select tracker type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Sprint">Sprint</SelectItem>
+                  <SelectItem value="Milestone">Milestone</SelectItem>
+                  <SelectItem value="Release">Release</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center justify-start space-x-2 ">
+                <Label
+                  htmlFor="latest-tracker"
+                  className="text-sm text-gray-700"
+                >
+                  Mark as latest
+                </Label>
+                <Switch
+                  id="latest-tracker"
+                  checked={isLatestTracker}
+                  onCheckedChange={setIsLatestTracker}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-2">
@@ -138,15 +181,6 @@ export function GoalTrackerForm({
                 placeholder="Sprint 4 for zimbve"
                 value={goalTrackerName}
                 onChange={(e) => setGoalTrackerName(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              <Label htmlFor="trackerType">Tracker type</Label>
-              <Input
-                id="trackerType"
-                placeholder="Sprint/Milestone"
-                value={trackerType}
-                onChange={(e) => setTrackerType(e.target.value)}
               />
             </div>
 

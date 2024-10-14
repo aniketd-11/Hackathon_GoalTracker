@@ -3,30 +3,24 @@ import axios from "axios";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { emailId: string } }
+  { params }: { params: { trackerId: number } }
 ) {
   try {
-    const emailId = params.emailId;
-    const api = `${process.env.BACKEND_API}/dashboard/dm/projects?email=${emailId}`;
+    const trackerId = params.trackerId;
+
+    const api = `${process.env.BACKEND_API}/tracker/getGoalTrackerWithActionsById`;
 
     const response = await axios.get(api, {
+      params: { trackerId },
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-store", // Ensure no caching
       },
     });
 
-    // Check if the response was successful
-    if (response.status !== 200) {
-      throw new Error("Error occurred while fetching accounts");
-    }
-
-    // Axios already parses the response data
-    const data = response.data;
-
     // Return the response as JSON
     return NextResponse.json({
-      data: data,
+      data: response.data,
       status: 200,
     });
   } catch (error) {
