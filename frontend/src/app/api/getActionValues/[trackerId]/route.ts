@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
+import https from "https";
 
 export async function GET(
   request: NextRequest,
@@ -12,6 +13,7 @@ export async function GET(
 
     const response = await axios.get(api, {
       params: { trackerId },
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-store", // Ensure no caching
