@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import SidebarLayout from "@/app/sidebar-layout";
 import Layout from "@/components/Layout/Layout";
 import { useAppSelector } from "@/redux/hooks";
@@ -32,6 +32,21 @@ import {
 } from "@/components/ui/dialog";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+import { useSelector } from "react-redux";
+import {
+  changeStatusService,
+  changeStatusServise,
+} from "@/services/changeStatusService";
+import React from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useRouter } from "next/navigation";
+import { changeRatingService } from "@/services/changeRatingService";
 
 interface ActionValue {
   actionName: string;
@@ -58,10 +73,14 @@ const ViewGoalDetails = () => {
   const [goalDetails, setGoalDetails] = useState<GoalDetails | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [selectedRating, setSelectedRating] = useState("");
 
   const trackerId = useAppSelector(
     (state: any) => state.trackerDetails?.trackerId
   );
+  const isAuthenticated = useSelector((state: any) => state.auth.user);
+
+  const route = useRouter();
 
   useEffect(() => {
     fetchActionValues();
@@ -71,7 +90,6 @@ const ViewGoalDetails = () => {
     try {
       const response = await getActionValues(trackerId);
       if (response) {
-        console.log(response);
         setGoalDetails(response);
         setIsLoading(false);
       } else {
@@ -88,7 +106,7 @@ const ViewGoalDetails = () => {
       case "GREEN":
         return "bg-green-100 text-green-800";
       case "YELLOW":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-800 py-2";
       case "ORANGE":
         return "bg-orange-100 text-orange-800";
       case "RED":
@@ -151,6 +169,16 @@ const ViewGoalDetails = () => {
     setShowImageDialog(true);
   };
 
+  const handleReviewComplete = async (trackerId: number) => {
+    const response = await changeStatusService(trackerId, "CLOSED");
+    route.push("/dashboard/accounts");
+  };
+
+  const handleChangeRating = async () => {
+    const response = await changeRatingService(trackerId, selectedRating);
+    route.push("/dashboard/accounts");
+  };
+
   return (
     <Layout>
       <SidebarLayout>
@@ -158,9 +186,28 @@ const ViewGoalDetails = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-2xl font-bold">Goal Details</CardTitle>
-              <Badge className={getRatingColor(goalDetails?.rating || "")}>
-                {goalDetails?.rating}
-              </Badge>
+              <div className="flex gap-2 items-center">
+                <Badge className={getRatingColor(goalDetails?.rating || "")}>
+                  {goalDetails?.rating}
+                </Badge>
+                <Select onValueChange={(value) => setSelectedRating(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Change rating" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["GREEN", "YELLOW", "RED"]
+                      .filter((rating) => rating !== goalDetails?.rating) // Filter out the current rating
+                      .map((rating) => (
+                        <SelectItem key={rating} value={rating}>
+                          {rating}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {selectedRating && (
+                  <Button onClick={handleChangeRating}>Submit Rating</Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
@@ -172,15 +219,24 @@ const ViewGoalDetails = () => {
                     Tracker ID: {goalDetails?.trackerId}
                   </p>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <CalendarDays className="w-4 h-4" />
-                  <span>
+                <div className="flex items-center space-x-2 text-sm text-gray-500 justify-between">
+                  <span className="flex gap-2 items-center">
+                    <CalendarDays className="w-4 h-4" />
                     {new Date(
                       goalDetails?.startDate || ""
                     ).toLocaleDateString()}{" "}
                     -{" "}
                     {new Date(goalDetails?.endDate || "").toLocaleDateString()}
                   </span>
+                  {isAuthenticated?.roleName === "QN" && (
+                    <Button
+                      onClick={() =>
+                        handleReviewComplete(goalDetails?.trackerId)
+                      }
+                    >
+                      Review complete
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

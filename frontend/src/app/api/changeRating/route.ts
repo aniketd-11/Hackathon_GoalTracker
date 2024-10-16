@@ -3,12 +3,12 @@ import axios from "axios";
 import https from "https";
 
 export async function POST(request: Request) {
-  const { trackerId, status } = await request.json();
+  const { trackerId, rating } = await request.json();
 
   try {
     const response = await axios.put(
-      `${process.env.BACKEND_API}/tracker/${trackerId}/status`,
-      status,
+      `${process.env.BACKEND_API}/tracker/${trackerId}/rating`,
+      rating,
       {
         httpsAgent: new https.Agent({ rejectUnauthorized: false }),
         headers: {
