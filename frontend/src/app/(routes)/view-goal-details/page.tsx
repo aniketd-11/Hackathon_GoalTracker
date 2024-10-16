@@ -50,6 +50,7 @@ import { changeRatingService } from "@/services/changeRatingService";
 
 interface ActionValue {
   actionName: string;
+  actionCategory: string,
   actionValue: string;
   actionRating: string | null;
   benchmarkValue: string;
@@ -148,6 +149,18 @@ const ViewGoalDetails = () => {
     }
   };
 
+  const getCategoryDotColor = (actionCategory: string) => {
+    switch (actionCategory) {
+      case "MAJOR":
+        return "bg-red-500"; // Red for MAJOR
+      case "MINOR":
+        return "bg-orange-500"; // Orange for MINOR
+      default:
+        return "bg-gray-500"; // Default color 
+    }
+  };
+  
+
   if (isLoading) {
     return (
       <Layout>
@@ -164,7 +177,6 @@ const ViewGoalDetails = () => {
 
   const handleViewAttachedDocument = (document: string | null) => {
     let imageUrl = document?.split("uploads\\")[1];
-    // console.log(imageUrl);
     setCurrentImage(`http://localhost:8080/uploads/${imageUrl}`);
     setShowImageDialog(true);
   };
@@ -243,10 +255,20 @@ const ViewGoalDetails = () => {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row justify-between flex-wrap">
               <CardTitle className="text-xl font-semibold">
                 Action Values
               </CardTitle>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
+                  <span className="text-sm text-gray-500">Major NC</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>
+                  <span className="text-sm text-gray-500">Minor NC</span>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -262,7 +284,14 @@ const ViewGoalDetails = () => {
                   {goalDetails?.actions.map((action, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">
+                      <div className="flex items-center">
+                        <div
+                          className={`w-2 h-2 rounded-full mr-2 ${getCategoryDotColor(
+                            action.actionCategory
+                          )}`}
+                        ></div>
                         {action.actionName}
+                      </div>
                       </TableCell>
                       <TableCell>
                         {action.actionValue ||
