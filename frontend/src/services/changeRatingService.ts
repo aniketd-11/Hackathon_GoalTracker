@@ -1,13 +1,13 @@
 "use client";
-export async function changeStatusService(trackerId: number, status: string) {
+export async function changeRatingService(trackerId: number, rating: string) {
   try {
-    const response = await fetch(`/api/changeStatus`, {
+    const response = await fetch(`/api/changeRating`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-store", // Ensure no caching
       },
-      body: JSON.stringify({ trackerId, status }),
+      body: JSON.stringify({ trackerId, rating }),
     });
 
     // Check if the request was successful

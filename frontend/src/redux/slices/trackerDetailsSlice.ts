@@ -10,7 +10,7 @@ type trackerDetailsState = {
 const trackerDetailsInfo = createSlice({
   name: "trackerDetails",
   initialState: {
-    trackerId: "",
+    trackerId: 0,
     status: "",
   },
   reducers: {

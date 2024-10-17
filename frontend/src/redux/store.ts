@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
@@ -18,13 +19,13 @@ import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 // Creates a fallback storage mechanism for server-side rendering
 const createNoopStorage = () => {
   return {
-    getItem(_key: string) {
+    getItem(_key: string): Promise<null> {
       return Promise.resolve(null);
     },
-    setItem(_key: string, value: any) {
+    setItem(_key: string, value: string): Promise<string> {
       return Promise.resolve(value);
     },
-    removeItem(_key: string) {
+    removeItem(_key: string): Promise<void> {
       return Promise.resolve();
     },
   };

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { login } from "@/redux/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { RootState } from "@/redux/store";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,10 +20,10 @@ export default function LoginPage() {
 
   // Check if user is authenticated
   const isAuthenticated = useAppSelector(
-    (state: any) => state.auth.user !== null
+    (state: RootState) => state.auth.user !== null
   );
 
-  const user = useAppSelector((state: any) => state.auth.user);
+  const user = useAppSelector((state: RootState) => state.auth.user);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
