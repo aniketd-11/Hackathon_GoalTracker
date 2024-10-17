@@ -289,7 +289,6 @@ const GoalDetailsForm = () => {
 
   const handleViewAttachedDocument = (document: string) => {
     const imageUrl = document?.split("uploads\\")[1];
-    // console.log(imageUrl);
     setShowImageDialog(true);
     setCurrentImage(`http://localhost:8080/uploads/${imageUrl}`);
   };
