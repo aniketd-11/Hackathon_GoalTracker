@@ -7,6 +7,7 @@ import Skeleton from "@/components/LoadingSkeleton/Skeleton";
 import { getAccounts } from "@/services/accountsService";
 import dynamic from "next/dynamic";
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 type Account = {
   accountId: number;
@@ -33,7 +34,8 @@ const Accounts = () => {
         console.error("Unexpected response format", response);
       }
     } catch (error) {
-      console.log("Error fetching accounts:", error);
+      toast.error("Error fetching accounts.");
+      // console.log("Error fetching accounts:", error);
     }
   }
 

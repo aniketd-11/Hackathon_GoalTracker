@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import SidebarLayout from "@/app/sidebar-layout";
 import Layout from "@/components/Layout/Layout";
 import { useAppSelector } from "@/redux/hooks";
@@ -32,9 +33,23 @@ import {
 } from "@/components/ui/dialog";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+import { useSelector } from "react-redux";
+import { changeStatusService } from "@/services/changeStatusService";
+import React from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useRouter } from "next/navigation";
+import { changeRatingService } from "@/services/changeRatingService";
+import { RootState } from "@/redux/store";
 
 interface ActionValue {
   actionName: string;
+  actionCategory: string;
   actionValue: string;
   actionRating: string | null;
   benchmarkValue: string;
@@ -58,10 +73,14 @@ const ViewGoalDetails = () => {
   const [goalDetails, setGoalDetails] = useState<GoalDetails | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [selectedRating, setSelectedRating] = useState("");
 
   const trackerId = useAppSelector(
-    (state: any) => state.trackerDetails?.trackerId
+    (state: RootState) => state.trackerDetails?.trackerId
   );
+  const isAuthenticated = useSelector((state: RootState) => state.auth.user);
+
+  const route = useRouter();
 
   useEffect(() => {
     fetchActionValues();
@@ -71,7 +90,6 @@ const ViewGoalDetails = () => {
     try {
       const response = await getActionValues(trackerId);
       if (response) {
-        console.log(response);
         setGoalDetails(response);
         setIsLoading(false);
       } else {
@@ -88,7 +106,7 @@ const ViewGoalDetails = () => {
       case "GREEN":
         return "bg-green-100 text-green-800";
       case "YELLOW":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-800 py-2";
       case "ORANGE":
         return "bg-orange-100 text-orange-800";
       case "RED":
@@ -130,6 +148,17 @@ const ViewGoalDetails = () => {
     }
   };
 
+  const getCategoryDotColor = (actionCategory: string) => {
+    switch (actionCategory) {
+      case "MAJOR":
+        return "bg-red-500"; // Red for MAJOR
+      case "MINOR":
+        return "bg-orange-500"; // Orange for MINOR
+      default:
+        return "bg-gray-500"; // Default color
+    }
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -145,9 +174,31 @@ const ViewGoalDetails = () => {
   }
 
   const handleViewAttachedDocument = (document: string | null) => {
-    let imageUrl = document?.split("uploads/")[1];
-    setCurrentImage(`https://goaltrackerbackend.onrender.com/uploads/${imageUrl}`);
+    if (!document) return;
+
+    // Create a Blob from the Base64 string
+    const byteCharacters = atob(document);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/png' });
+    const blobUrl = URL.createObjectURL(blob);
+
+    setCurrentImage(blobUrl); 
     setShowImageDialog(true);
+
+  };
+
+  const handleReviewComplete = async (trackerId: number) => {
+    await changeStatusService(trackerId, "CLOSED");
+    route.push("/dashboard/accounts");
+  };
+
+  const handleChangeRating = async () => {
+    await changeRatingService(trackerId, selectedRating);
+    route.push("/dashboard/accounts");
   };
 
   return (
@@ -157,9 +208,28 @@ const ViewGoalDetails = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-2xl font-bold">Goal Details</CardTitle>
-              <Badge className={getRatingColor(goalDetails?.rating || "")}>
-                {goalDetails?.rating}
-              </Badge>
+              <div className="flex gap-2 items-center">
+                <Badge className={getRatingColor(goalDetails?.rating || "")}>
+                  {goalDetails?.rating}
+                </Badge>
+                <Select onValueChange={(value) => setSelectedRating(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Change rating" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["GREEN", "YELLOW", "RED"]
+                      .filter((rating) => rating !== goalDetails?.rating) // Filter out the current rating
+                      .map((rating) => (
+                        <SelectItem key={rating} value={rating}>
+                          {rating}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {selectedRating && (
+                  <Button onClick={handleChangeRating}>Submit Rating</Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
@@ -171,25 +241,44 @@ const ViewGoalDetails = () => {
                     Tracker ID: {goalDetails?.trackerId}
                   </p>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <CalendarDays className="w-4 h-4" />
-                  <span>
+                <div className="flex items-center space-x-2 text-sm text-gray-500 justify-between">
+                  <span className="flex gap-2 items-center">
+                    <CalendarDays className="w-4 h-4" />
                     {new Date(
                       goalDetails?.startDate || ""
                     ).toLocaleDateString()}{" "}
                     -{" "}
                     {new Date(goalDetails?.endDate || "").toLocaleDateString()}
                   </span>
+                  {isAuthenticated?.roleName === "QN" && (
+                    <Button
+                      onClick={() =>
+                        handleReviewComplete(goalDetails?.trackerId ?? 0)
+                      }
+                    >
+                      Review complete
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row justify-between flex-wrap">
               <CardTitle className="text-xl font-semibold">
                 Action Values
               </CardTitle>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
+                  <span className="text-sm text-gray-500">Major NC</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>
+                  <span className="text-sm text-gray-500">Minor NC</span>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -205,7 +294,14 @@ const ViewGoalDetails = () => {
                   {goalDetails?.actions.map((action, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">
-                        {action.actionName}
+                        <div className="flex items-center">
+                          <div
+                            className={`w-2 h-2 rounded-full mr-2 ${getCategoryDotColor(
+                              action.actionCategory
+                            )}`}
+                          ></div>
+                          {action.actionName}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {action.actionValue ||

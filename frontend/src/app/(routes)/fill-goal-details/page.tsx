@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -51,6 +53,8 @@ import {
 import { useRouter } from "next/navigation";
 
 import dynamic from "next/dynamic";
+import { RootState } from "@/redux/store";
+import { toast } from "react-toastify";
 
 interface FormField {
   actionId: number;
@@ -65,8 +69,29 @@ interface FormField {
   createdAt: string;
   actionValue?: string | number;
   isNotApplicable?: boolean;
-  attachedDocument?: string | null;
+  attachedDocument?: string | null; // Ensure attachedDocument is defined
 }
+
+interface FieldData {
+  value?: string;
+  isNotApplicable?: boolean;
+  attachedDocument?: string | null; // Ensure attachedDocument is defined
+}
+
+type Step = {
+  isNotApplicable: boolean;
+  attachedDocument: File | null;
+};
+
+type FormValues = {
+  steps: Step[];
+};
+
+type FieldError = {
+  steps?: Array<{
+    [key: string]: FieldError | undefined; // Assuming FieldError is the type for your errors
+  }>;
+};
 
 const GoalDetailsForm = () => {
   const route = useRouter();
@@ -89,20 +114,27 @@ const GoalDetailsForm = () => {
       steps: [{}, {}, {}],
     },
   });
-  const { fields } = useFieldArray({
+
+  // const { fields } = useFieldArray({
+  //   control,
+  //   name: "steps",
+  // });
+
+  // If fields are unused, remove them:
+  useFieldArray({
     control,
     name: "steps",
   });
 
   const trackerId = useAppSelector(
-    (state: any) => state.trackerDetails?.trackerId
+    (state: RootState) => state.trackerDetails?.trackerId
   );
   const trackerStatus = useAppSelector(
-    (state: any) => state.trackerDetails?.status
+    (state: RootState) => state.trackerDetails?.status
   );
 
   useEffect(() => {
-    if (trackerStatus === "IN_PROGRESS") {
+    if (trackerStatus === "IN_PROGRESS" && formData?.length === 0) {
       fetchActionValues();
     } else {
       fetchFormDetails();
@@ -120,7 +152,8 @@ const GoalDetailsForm = () => {
         console.error("Unexpected response format", response);
       }
     } catch (error) {
-      console.log("Error fetching form details:", error);
+      // console.log("Error fetching form details:", error);
+      toast.error("Error fetching form details.");
     }
   }
 
@@ -139,12 +172,29 @@ const GoalDetailsForm = () => {
     }
   }
 
+  // const initializeFormState = (data: FormField[]) => {
+  //   const stepsData = [data.slice(0, 4), data.slice(4, 8), data.slice(8)];
+
+  //   stepsData.forEach((stepFields, stepIndex) => {
+  //     stepFields.forEach((field) => {
+  //       setValue(`steps.${stepIndex}.${field.actionId}`, {
+  //         value: field.actionValue || "",
+  //         isNotApplicable: field.isNotApplicable || false,
+  //         attachedDocument: field.attachedDocument || null,
+  //       });
+  //     });
+  //   });
+  // };
+
   const initializeFormState = (data: FormField[]) => {
     const stepsData = [data.slice(0, 4), data.slice(4, 8), data.slice(8)];
 
     stepsData.forEach((stepFields, stepIndex) => {
       stepFields.forEach((field) => {
-        setValue(`steps.${stepIndex}.${field.actionId}`, {
+        const key = `steps.${stepIndex}.${field.actionId}`; // Construct the key
+
+        // Cast the key to any to bypass strict typing
+        setValue(key as any, {
           value: field.actionValue || "",
           isNotApplicable: field.isNotApplicable || false,
           attachedDocument: field.attachedDocument || null,
@@ -162,28 +212,32 @@ const GoalDetailsForm = () => {
 
     const fileUploads: { [key: string]: File } = {};
     data.steps.forEach((step: number) => {
-      Object.entries(step).forEach(([actionId, fieldData]: [string, any]) => {
-        const actionValue =
-          fieldData.value !== undefined ? fieldData.value : ""; // Use actionValue if provided
-        const isNotApplicable = fieldData.isNotApplicable || actionValue === ""; // NA if user marked or actionValue is ""
+      Object.entries(step).forEach(
+        ([actionId, fieldData]: [string, FieldData]) => {
+          const actionValue =
+            fieldData.value !== undefined ? fieldData.value : ""; // Use actionValue if provided
+          const isNotApplicable =
+            fieldData.isNotApplicable || actionValue === ""; // NA if user marked or actionValue is ""
 
-        // Create the goal object
-        const goal = {
-          actionId: parseInt(actionId, 10),
-          actionValue,
-          isNotApplicable,
-        };
+          // Create the goal object
+          const goal = {
+            actionId: parseInt(actionId, 10),
+            actionValue,
+            isNotApplicable,
+          };
 
-        // Push the goal to formattedGoals if there's an actionValue or if isNotApplicable is true
-        if (actionValue !== "" || isNotApplicable) {
-          formattedGoals.push(goal);
+          // Push the goal to formattedGoals if there's an actionValue or if isNotApplicable is true
+          if (actionValue !== "" || isNotApplicable) {
+            formattedGoals.push(goal);
+          }
+
+          if ((fieldData as any).attachedDocument) {
+            fileUploads[`file-${actionId}`] = (
+              fieldData as any
+            ).attachedDocument;
+          }
         }
-
-        // Handle attachedDocument and store in fileUploads separately
-        if (fieldData.attachedDocument) {
-          fileUploads[`file-${actionId}`] = fieldData.attachedDocument;
-        }
-      });
+      );
     });
 
     // Uncomment the following lines when ready to submit
@@ -209,32 +263,45 @@ const GoalDetailsForm = () => {
     actionId: number,
     isChecked: boolean
   ) => {
-    setValue(`steps.${stepIndex}.${actionId}.isNotApplicable`, isChecked);
+    setValue(
+      `steps.${stepIndex}.${actionId}.isNotApplicable` as keyof FormValues,
+      isChecked as any
+    );
     if (isChecked) {
       setCurrentActionId(`${stepIndex}.${actionId}`);
       setOpenDialog(true);
     } else {
-      setValue(`steps.${stepIndex}.${actionId}.attachedDocument`, null);
+      setValue(
+        `steps.${stepIndex}.${actionId}.attachedDocument` as keyof FormValues,
+        null as any
+      );
     }
   };
 
   const handleProofUpload = (file: File) => {
     if (currentActionId !== null) {
       const [stepIndex, actionId] = currentActionId.split(".");
-      setValue(`steps.${stepIndex}.${actionId}.attachedDocument`, file);
+      setValue(
+        `steps.${stepIndex}.${actionId}.attachedDocument` as keyof FormValues,
+        file as any
+      );
       setOpenDialog(false);
     }
   };
 
   const handleViewAttachedDocument = (document: string) => {
-    setCurrentImage(`/api/images/${encodeURIComponent(document)}`);
+    const imageUrl = document?.split("uploads\\")[1];
     setShowImageDialog(true);
+    setCurrentImage(`http://localhost:8080/uploads/${imageUrl}`);
   };
 
   const renderField = (field: FormField, stepIndex: number) => {
     const fieldId = `steps.${stepIndex}.${field.actionId}`;
-    const isNA = watch(`${fieldId}.isNotApplicable`);
-    const attachedDocument = watch(`${fieldId}.attachedDocument`);
+    const isNA =
+      watch(`${fieldId}.isNotApplicable` as keyof FormValues) ?? false;
+    const attachedDocument = watch(
+      `${fieldId}.attachedDocument` as keyof FormValues
+    );
 
     return (
       <div key={field.actionId} className="mb-6">
@@ -253,9 +320,10 @@ const GoalDetailsForm = () => {
               >
                 Mark as NA
               </Label>
+
               <Switch
                 id={`na-toggle-${fieldId}`}
-                checked={isNA}
+                checked={Boolean(isNA)}
                 onCheckedChange={(checked) =>
                   handleNAToggle(stepIndex, field.actionId, checked)
                 }
@@ -266,9 +334,11 @@ const GoalDetailsForm = () => {
                     <TooltipTrigger>
                       <Eye
                         className="w-4 h-4 mr-2"
-                        onClick={() =>
-                          handleViewAttachedDocument(attachedDocument)
-                        }
+                        onClick={() => {
+                          if (typeof attachedDocument === "string") {
+                            handleViewAttachedDocument(attachedDocument);
+                          }
+                        }}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
@@ -307,14 +377,15 @@ const GoalDetailsForm = () => {
         </div>
         {!isNA && (
           <Controller
-            name={`${fieldId}.value`}
+            name={`${fieldId}.value` as `steps.${number}`} // Ensure you assert correctly
             control={control}
             defaultValue={field?.actionValue || ""}
             render={({ field: { onChange, value } }) => {
+              const selectValue = typeof value === "string" ? value : "";
               switch (field.actionType) {
                 case "OPTION":
                   return (
-                    <Select onValueChange={onChange} value={value}>
+                    <Select onValueChange={onChange} value={selectValue}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select an option" />
                       </SelectTrigger>
@@ -333,7 +404,7 @@ const GoalDetailsForm = () => {
                       <Input
                         type="number"
                         onChange={onChange}
-                        value={value}
+                        value={selectValue}
                         placeholder="Enter percentage"
                       />
                       <span>%</span>
@@ -344,7 +415,7 @@ const GoalDetailsForm = () => {
                     <Input
                       type="number"
                       onChange={onChange}
-                      value={value}
+                      value={selectValue}
                       placeholder="Enter number"
                     />
                   );
@@ -353,7 +424,7 @@ const GoalDetailsForm = () => {
                     <Input
                       type="text"
                       onChange={onChange}
-                      value={value}
+                      value={selectValue}
                       placeholder="Enter value"
                     />
                   );
@@ -361,7 +432,10 @@ const GoalDetailsForm = () => {
             }}
           />
         )}
-        {errors.steps?.[stepIndex]?.[field.actionId] && (
+        {/* // Your existing code */}
+        {(
+          errors.steps?.[stepIndex] as Record<string, FieldError | undefined>
+        )?.[field.actionId] && (
           <p className="text-red-500 text-xs mt-1">This field is required</p>
         )}
       </div>
@@ -405,7 +479,7 @@ const GoalDetailsForm = () => {
                     currentStep={currentStep}
                     className="mb-8"
                   />
-                  <form onSubmit={handleSubmit(onSubmit)}>
+                  <form>
                     {steps[currentStep].fields.map((field) =>
                       renderField(field, currentStep)
                     )}
@@ -462,25 +536,27 @@ const GoalDetailsForm = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Attached Document</DialogTitle>
-          </DialogHeader>
-          {currentImage && (
-            <div className="relative w-full h-[60vh]">
-              <img
-                src={currentImage}
-                alt="Attached Document"
-                className="w-full h-full object-contain"
-              />
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setShowImageDialog(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {showImageDialog && (
+        <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Attached Document</DialogTitle>
+            </DialogHeader>
+            {currentImage && (
+              <div className="relative w-full h-[60vh]">
+                <img
+                  src={currentImage}
+                  alt="Attached Document"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setShowImageDialog(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </Layout>
   );
 };

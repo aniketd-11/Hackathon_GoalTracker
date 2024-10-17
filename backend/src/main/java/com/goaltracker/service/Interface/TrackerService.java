@@ -4,10 +4,7 @@ import com.goaltracker.dto.ActionValueDTO;
 import com.goaltracker.dto.GoalTrackerDTO;
 import com.goaltracker.dto.GoalTrackerRequestDTO;
 import com.goaltracker.dto.ProjectWithGoalTrackerDTO;
-import com.goaltracker.model.GoalTrackerMaster;
-import com.goaltracker.model.Status;
-import com.goaltracker.model.TemplateAction;
-import com.goaltracker.model.TemplateTypes;
+import com.goaltracker.model.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -20,5 +17,6 @@ public interface TrackerService {
     void addTrackerActionValues(List<ActionValueDTO> actionValueDTO, int trackerId, Map<Integer,MultipartFile> files);
     GoalTrackerDTO getGoalTrackerWithActions(int trackerId);
     void updateGoalTrackerStatus(int trackerId, Status status);
+    void updateGoalTrackerRating(int trackerId, Rating rating);
     List<ProjectWithGoalTrackerDTO> getAllProjectsWithGoalTrackers(TemplateTypes templateType);
 }
