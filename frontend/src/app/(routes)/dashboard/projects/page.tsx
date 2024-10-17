@@ -117,7 +117,7 @@ const ProfessionalDashboard = () => {
         console.error("Unexpected response format", response);
       }
     } catch (error) {
-      // console.log("Error fetching accounts:", error);
+      console.log("Error fetching accounts:", error);
       toast.error("Error fetching Projects and Trackers.");
     }
   }

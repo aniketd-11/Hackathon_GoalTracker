@@ -152,7 +152,7 @@ const GoalDetailsForm = () => {
         console.error("Unexpected response format", response);
       }
     } catch (error) {
-      // console.log("Error fetching form details:", error);
+      console.log("Error fetching form details:", error);
       toast.error("Error fetching form details.");
     }
   }

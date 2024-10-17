@@ -35,7 +35,7 @@ const Accounts = () => {
       }
     } catch (error) {
       toast.error("Error fetching accounts.");
-      // console.log("Error fetching accounts:", error);
+      console.log("Error fetching accounts:", error);
     }
   }
 
