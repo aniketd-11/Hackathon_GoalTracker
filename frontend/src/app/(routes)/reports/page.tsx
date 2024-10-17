@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import React, { useState } from "react";
 
 const Reports = () => {
-  const [template, setTemplate] = useState("");
+  const [template, setTemplate] = useState<string | null>(null);
 
   const downloadReport = async () => {
     try {

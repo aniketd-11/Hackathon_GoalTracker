@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { changeStatusServise } from "@/services/changeStatusService";
+import { changeStatusService } from "@/services/changeStatusService";
 import {
   Tooltip,
   TooltipContent,
@@ -132,7 +132,7 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
   };
 
   const changeStatus = async (trackerId: number, status: string) => {
-    const response = await changeStatusServise(trackerId, status);
+    await changeStatusService(trackerId, status);
 
     fetchProjects();
   };
@@ -254,7 +254,7 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
                                           <div className="text-sm text-blue-700 flex items-center gap-2">
                                             <div
                                               className={`w-2 h-2 rounded-full ${getColorClass(
-                                                tracker?.rating
+                                                tracker?.rating ?? ""
                                               )}`}
                                             ></div>
                                             {tracker.goalTrackerName || "-"}
@@ -268,7 +268,8 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
                                                         className="text-gray-500 w-4 h-4 cursor-pointer"
                                                         onClick={() =>
                                                           handleRedirect(
-                                                            tracker?.status,
+                                                            tracker?.status ??
+                                                              "",
                                                             tracker?.trackerId
                                                           )
                                                         }

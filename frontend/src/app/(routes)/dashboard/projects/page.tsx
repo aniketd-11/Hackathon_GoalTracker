@@ -34,7 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { changeStatusServise } from "@/services/changeStatusService";
+import { changeStatusService } from "@/services/changeStatusService";
 import SelectProject from "@/components/Projects/CreateGoalDialog/SelectProject";
 
 type GoalTracker = {
@@ -131,7 +131,7 @@ const ProfessionalDashboard = () => {
   };
 
   const changeStatus = async (trackerId: number, status: string) => {
-    const response = await changeStatusServise(trackerId, status);
+    await changeStatusService(trackerId, status);
 
     fetchProjects();
   };
@@ -267,7 +267,7 @@ const ProfessionalDashboard = () => {
                                           <div className="text-sm text-blue-700 flex items-center gap-2">
                                             <div
                                               className={`w-2 h-2 rounded-full ${getColorClass(
-                                                tracker?.rating
+                                                tracker?.rating ?? ""
                                               )}`}
                                             ></div>
                                             {tracker.goalTrackerName || "-"}
@@ -284,7 +284,8 @@ const ProfessionalDashboard = () => {
                                                         className="text-gray-500 w-4 h-4 cursor-pointer"
                                                         onClick={() =>
                                                           handleRedirect(
-                                                            tracker?.status,
+                                                            tracker?.status ??
+                                                              "",
                                                             tracker?.trackerId
                                                           )
                                                         }

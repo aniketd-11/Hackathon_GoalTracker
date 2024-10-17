@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -33,10 +34,7 @@ import {
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { useSelector } from "react-redux";
-import {
-  changeStatusService,
-  changeStatusServise,
-} from "@/services/changeStatusService";
+import { changeStatusService } from "@/services/changeStatusService";
 import React from "react";
 import {
   Select,
@@ -47,10 +45,11 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { changeRatingService } from "@/services/changeRatingService";
+import { RootState } from "@/redux/store";
 
 interface ActionValue {
   actionName: string;
-  actionCategory: string,
+  actionCategory: string;
   actionValue: string;
   actionRating: string | null;
   benchmarkValue: string;
@@ -77,9 +76,9 @@ const ViewGoalDetails = () => {
   const [selectedRating, setSelectedRating] = useState("");
 
   const trackerId = useAppSelector(
-    (state: any) => state.trackerDetails?.trackerId
+    (state: RootState) => state.trackerDetails?.trackerId
   );
-  const isAuthenticated = useSelector((state: any) => state.auth.user);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.user);
 
   const route = useRouter();
 
@@ -156,10 +155,9 @@ const ViewGoalDetails = () => {
       case "MINOR":
         return "bg-orange-500"; // Orange for MINOR
       default:
-        return "bg-gray-500"; // Default color 
+        return "bg-gray-500"; // Default color
     }
   };
-  
 
   if (isLoading) {
     return (
@@ -176,18 +174,18 @@ const ViewGoalDetails = () => {
   }
 
   const handleViewAttachedDocument = (document: string | null) => {
-    let imageUrl = document?.split("uploads\\")[1];
+    const imageUrl = document?.split("uploads\\")[1];
     setCurrentImage(`http://localhost:8080/uploads/${imageUrl}`);
     setShowImageDialog(true);
   };
 
   const handleReviewComplete = async (trackerId: number) => {
-    const response = await changeStatusService(trackerId, "CLOSED");
+    await changeStatusService(trackerId, "CLOSED");
     route.push("/dashboard/accounts");
   };
 
   const handleChangeRating = async () => {
-    const response = await changeRatingService(trackerId, selectedRating);
+    await changeRatingService(trackerId, selectedRating);
     route.push("/dashboard/accounts");
   };
 
@@ -243,7 +241,7 @@ const ViewGoalDetails = () => {
                   {isAuthenticated?.roleName === "QN" && (
                     <Button
                       onClick={() =>
-                        handleReviewComplete(goalDetails?.trackerId)
+                        handleReviewComplete(goalDetails?.trackerId ?? 0)
                       }
                     >
                       Review complete
@@ -284,14 +282,14 @@ const ViewGoalDetails = () => {
                   {goalDetails?.actions.map((action, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <div
-                          className={`w-2 h-2 rounded-full mr-2 ${getCategoryDotColor(
-                            action.actionCategory
-                          )}`}
-                        ></div>
-                        {action.actionName}
-                      </div>
+                        <div className="flex items-center">
+                          <div
+                            className={`w-2 h-2 rounded-full mr-2 ${getCategoryDotColor(
+                              action.actionCategory
+                            )}`}
+                          ></div>
+                          {action.actionName}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {action.actionValue ||

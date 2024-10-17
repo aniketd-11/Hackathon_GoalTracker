@@ -96,16 +96,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                   : ""
               }`}
             >
-              <Button
-                variant="ghost"
-                className={`w-full justify-start  gap-2 ${
-                  isSidebarCollapsed ? "px-2" : "px-4"
-                }`}
-                onClick={handleRedirectReports}
-              >
-                <ChartPie />
-                {!isSidebarCollapsed && <span>Reports</span>}
-              </Button>
+              {user?.roleName === "QN" && (
+                <Button
+                  variant="ghost"
+                  className={`w-full justify-start  gap-2 ${
+                    isSidebarCollapsed ? "px-2" : "px-4"
+                  }`}
+                  onClick={handleRedirectReports}
+                >
+                  <ChartPie />
+                  {!isSidebarCollapsed && <span>Reports</span>}
+                </Button>
+              )}
             </li>
           </ul>
         </nav>
