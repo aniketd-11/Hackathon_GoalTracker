@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Base64;
 
 @Service
 public class FileStorageImpl implements FileStorageService {
@@ -20,29 +21,12 @@ public class FileStorageImpl implements FileStorageService {
             return null; // No file uploaded
         }
 
-        // Get the absolute path to the "uploads" directory within the project folder
-        String projectRootPath = System.getProperty("user.dir");  // Get the project root directory
-        String absoluteUploadPath = Paths.get(projectRootPath, uploadDirectory).toString();
+        byte[] fileBytes = file.getBytes();
+        String base64EncodedImage = Base64.getEncoder().encodeToString(fileBytes);
 
-        // Ensure the upload directory exists, create it if it doesn't
-        File directory = new File(absoluteUploadPath);
-        if (!directory.exists()) {
-            directory.mkdirs();  // Create the directory if it doesn't exist
-        }
+        return base64EncodedImage;
 
-        // Generate a unique file name
-        String fileName = System.currentTimeMillis() + "_" + sanitizeFileName(file.getOriginalFilename());
-        String filePath = Paths.get(absoluteUploadPath, fileName).toString();
-
-        // Save the file to the project's "uploads" folder
-        File destFile = new File(filePath);
-        file.transferTo(destFile);
-
-        return filePath;  // Return the absolute path where the file is saved
     }
-
-
-
 
     /**
      * Sanitizes file name to prevent directory traversal and other issues.

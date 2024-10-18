@@ -31,6 +31,8 @@ public class GoalTrackerAction {
     private Rating actionRating;
 
     private Boolean isNotApplicable;
+
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String attachedDocument;
 
 }

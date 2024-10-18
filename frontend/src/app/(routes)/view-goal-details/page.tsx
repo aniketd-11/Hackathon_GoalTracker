@@ -174,9 +174,21 @@ const ViewGoalDetails = () => {
   }
 
   const handleViewAttachedDocument = (document: string | null) => {
-    const imageUrl = document?.split("uploads\\")[1];
-    setCurrentImage(`http://localhost:8080/uploads/${imageUrl}`);
+    if (!document) return;
+
+    // Create a Blob from the Base64 string
+    const byteCharacters = atob(document);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/png' });
+    const blobUrl = URL.createObjectURL(blob);
+
+    setCurrentImage(blobUrl); 
     setShowImageDialog(true);
+
   };
 
   const handleReviewComplete = async (trackerId: number) => {
