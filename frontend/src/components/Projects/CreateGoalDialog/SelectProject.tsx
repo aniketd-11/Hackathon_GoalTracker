@@ -46,7 +46,10 @@ const SelectProject = ({
         }
       }}
     >
-      <SelectTrigger className="w-44 bg-blue-50 border-blue-200 hover:border-blue-300 focus:ring-blue-500">
+      <SelectTrigger
+        className="w-44"
+        // className="w-44 bg-blue-50 border-blue-200 hover:border-blue-300 focus:ring-blue-500"
+      >
         <SelectValue placeholder="Select project">
           {/* Display "All Projects" if selectedProject is null */}
           {selectedProject ? selectedProject.name : "All Projects"}
