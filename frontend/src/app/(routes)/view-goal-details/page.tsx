@@ -53,8 +53,10 @@ interface ActionValue {
   actionValue: string;
   actionRating: string | null;
   benchmarkValue: string;
+  customBenchMarkValue: string | null;
   comparisonOperator: string | null;
   isNotApplicable: boolean;
+  isExcluded: boolean;
   attachedDocument: string | null;
 }
 
@@ -278,6 +280,9 @@ const ViewGoalDetails = () => {
                   <div className="w-2 h-2 rounded-full bg-orange-500 mr-1"></div>
                   <span className="text-sm text-gray-500">Minor NC</span>
                 </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-gray-500">** Custom Benchmark Value</span>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -304,41 +309,59 @@ const ViewGoalDetails = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {action.actionValue ||
-                          (action.isNotApplicable ? (
-                            <span className="flex items-center gap-2">
-                              Marked as NA
-                              {action?.attachedDocument && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Eye
-                                        className="w-4 h-4 mr-2"
-                                        onClick={() =>
-                                          handleViewAttachedDocument(
-                                            action?.attachedDocument
-                                          )
-                                        }
-                                      />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>View document</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </span>
-                          ) : (
-                            ""
-                          ))}
+                          {action.actionValue ||
+                            (action.isExcluded ? (
+                              <span className="flex items-center gap-2">
+                                Marked as Excluded
+                                {action?.attachedDocument && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Eye
+                                          className="w-4 h-4 mr-2"
+                                          onClick={() => handleViewAttachedDocument(action?.attachedDocument)}
+                                        />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>View document</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </span>
+                            ) : action.isNotApplicable ? (
+                              <span className="flex items-center gap-2">
+                                Marked as NA
+                                {action?.attachedDocument && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Eye
+                                          className="w-4 h-4 mr-2"
+                                          onClick={() => handleViewAttachedDocument(action?.attachedDocument)}
+                                        />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>View document</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </span>
+                            ) : (
+                              ""
+                            ))}
                       </TableCell>
-
                       <TableCell>
                         <div className="flex items-center space-x-1">
                           <span className="text-gray-500">
                             {getOperatorSymbol(action.comparisonOperator)}
                           </span>
-                          <span>{action.benchmarkValue}</span>
+                          <span>{action.customBenchMarkValue && action.customBenchMarkValue.trim() !== '' 
+                                  ? `${action.customBenchMarkValue} **`  
+                                  : action.benchmarkValue
+                                }
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
