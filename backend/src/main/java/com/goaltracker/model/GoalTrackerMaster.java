@@ -31,7 +31,14 @@ public class GoalTrackerMaster {
     @Enumerated(EnumType.STRING)
     private Rating rating;
 
+    @Enumerated(EnumType.STRING)
+    private TemplateTypes templateType;
+
     private boolean isLatest;
+    private String trackerType;
+    private String qn_notes;
+    private String dm_notes;
+
 
 }
 

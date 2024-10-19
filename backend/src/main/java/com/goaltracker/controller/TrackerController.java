@@ -1,10 +1,7 @@
 package com.goaltracker.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.goaltracker.dto.ActionValueDTO;
-import com.goaltracker.dto.GoalTrackerDTO;
-import com.goaltracker.dto.GoalTrackerRequestDTO;
-import com.goaltracker.dto.ProjectWithGoalTrackerDTO;
+import com.goaltracker.dto.*;
 import com.goaltracker.model.*;
 import com.goaltracker.service.Interface.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/tracker")
@@ -62,6 +60,7 @@ public class TrackerController {
     @PostMapping(value = "/add-trackerActionValue", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> addTrackerActionValues(@RequestParam String actionValueDTOsJson,
                                                     @RequestParam int trackerId,
+                                                    @RequestParam(required = false) String note,
                                                     @RequestParam(required = false) Map<String, MultipartFile> files) {
         try {
             List<ActionValueDTO> actionValueDTOs = mapper.readValue(actionValueDTOsJson,
@@ -77,7 +76,7 @@ public class TrackerController {
                     }
                 }
             }
-            trackerService.addTrackerActionValues(actionValueDTOs, trackerId,actionIdToFileMap);
+            trackerService.addTrackerActionValues(actionValueDTOs, trackerId,note,actionIdToFileMap);
             return ResponseEntity.ok("Action values and ratings saved successfully.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -136,6 +135,20 @@ public class TrackerController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error updating rating: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{trackerId}/addNote")
+    public ResponseEntity<?> addQnNotesToTracker(@PathVariable int trackerId, @RequestBody NoteRequestDTO dto){
+        try {
+            GoalTrackerDTO trackerData = trackerService.addNoteToTracker(trackerId, dto.getNote());
+            Map<String, Object> response = new HashMap<>();
+            response.put("message","Note added successfully");
+            response.put("trackerData:",trackerData);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error adding note: " + e.getMessage());
         }
     }
 }

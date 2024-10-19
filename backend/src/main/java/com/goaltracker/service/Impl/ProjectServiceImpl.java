@@ -71,6 +71,11 @@ public class ProjectServiceImpl implements ProjectService {
                         tracker.getEndDate(),
                         tracker.getStatus() != null ? tracker.getStatus().toString() : null,
                         tracker.getRating() != null ? tracker.getRating().toString() : null,
+                        tracker.isLatest(),
+                        tracker.getTemplateType() != null ? tracker.getTemplateType().toString() : null, // Add templateType
+                        tracker.getTrackerType(),
+                        tracker.getQn_notes(),
+                        tracker.getDm_notes(),
                         null
                 ))
                 .collect(Collectors.toList());

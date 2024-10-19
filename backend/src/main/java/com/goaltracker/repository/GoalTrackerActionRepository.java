@@ -11,7 +11,9 @@ import java.util.Optional;
 public interface GoalTrackerActionRepository extends JpaRepository<GoalTrackerAction,Integer> {
     Optional<GoalTrackerAction> findByGoalTracker_TrackerIdAndTemplateAction_ActionId(int trackerId, int actionId);
 
-    @Query("SELECT new com.goaltracker.dto.GoalTrackerActionDTO(ga.actionValue, ga.actionRating, ga.isNotApplicable, ga.attachedDocument,ta) " +
+    @Query("SELECT new com.goaltracker.dto.GoalTrackerActionDTO(ga.actionValue, ga.actionRating, " +
+            "ga.isNotApplicable, ga.attachedDocument,ga.additionalInfoValue," +
+            "ga.customBenchMarkValue,ga.actionPlan,ga.actionplanETA,ga.isExcluded,ta) " +
             "FROM GoalTrackerAction ga " +
             "JOIN ga.templateAction ta " +
             "JOIN ga.goalTracker gm " +
