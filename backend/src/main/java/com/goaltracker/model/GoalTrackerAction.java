@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "goal_tracker_action")
 @Data
@@ -30,9 +32,18 @@ public class GoalTrackerAction {
     @Enumerated(EnumType.STRING)
     private Rating actionRating;
 
-    private Boolean isNotApplicable;
+    private String additionalInfoValue;
+    private String customBenchMarkValue;
 
     @Column(columnDefinition = "MEDIUMTEXT")
     private String attachedDocument;
+
+    @Column(columnDefinition = "TEXT")
+    private String actionPlan;
+
+    private LocalDateTime actionplanETA;
+
+    private Boolean isExcluded;
+    private Boolean isNotApplicable;
 
 }

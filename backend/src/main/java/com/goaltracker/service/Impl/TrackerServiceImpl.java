@@ -57,6 +57,8 @@ public class TrackerServiceImpl implements TrackerService {
             goalTracker.setEndDate(dto.getEndDate());
             goalTracker.setProject(project);
             goalTracker.setStatus(Status.INITIATED);
+            goalTracker.setTemplateType(TemplateTypes.valueOf(dto.getTemplate_type()));
+            goalTracker.setTrackerType(dto.getType());
             goalTracker.setRating(null);
             goalTracker.setLatest(dto.getIsLatest());
 
@@ -103,7 +105,7 @@ public class TrackerServiceImpl implements TrackerService {
     }
 
     @Override
-    public void addTrackerActionValues(List<ActionValueDTO> actionValueDTO, int trackerId, Map<Integer, MultipartFile> actionIdToFileMap) {
+    public void addTrackerActionValues(List<ActionValueDTO> actionValueDTO, int trackerId, String note, Map<Integer, MultipartFile> actionIdToFileMap) {
         GoalTrackerMaster goalTracker = goalTrackerMasterRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
 
@@ -115,8 +117,8 @@ public class TrackerServiceImpl implements TrackerService {
 
             // Calculate the rating only if the action is applicable
             String rating = null;
-            if(!dto.getIsNotApplicable()){
-                rating = calculateRating(dto.getActionValue(), action);
+            if(!dto.getIsNotApplicable() && !dto.getIsExcluded() && (dto.getAdditionalInfoValue() == null || dto.getAdditionalInfoValue().isEmpty())){
+                rating = calculateRating(dto.getActionValue(), action,dto.getCustomBenchMarkValue());
                 if (Objects.equals(rating, Rating.RED.toString())) {
                     redRatingCount++;
                 }
@@ -136,6 +138,11 @@ public class TrackerServiceImpl implements TrackerService {
                 goalTrackerAction.setActionValue(dto.getActionValue());
                 goalTrackerAction.setActionRating(rating != null ? Rating.valueOf(rating) : null);
                 goalTrackerAction.setIsNotApplicable(dto.getIsNotApplicable());
+                goalTrackerAction.setIsExcluded(dto.getIsExcluded());
+                goalTrackerAction.setActionPlan(dto.getActionPlan());
+                goalTrackerAction.setActionplanETA(dto.getActionPlanETA());
+                goalTrackerAction.setCustomBenchMarkValue(dto.getCustomBenchMarkValue());
+                goalTrackerAction.setAdditionalInfoValue(dto.getAdditionalInfoValue());
             } else {
                 // Create a new record
                 goalTrackerAction = new GoalTrackerAction();
@@ -144,10 +151,16 @@ public class TrackerServiceImpl implements TrackerService {
                 goalTrackerAction.setActionValue(dto.getActionValue());
                 goalTrackerAction.setActionRating(rating != null ? Rating.valueOf(rating) : null);
                 goalTrackerAction.setIsNotApplicable(dto.getIsNotApplicable());
+                goalTrackerAction.setIsExcluded(dto.getIsExcluded());
+                goalTrackerAction.setActionPlan(dto.getActionPlan());
+                goalTrackerAction.setActionplanETA(dto.getActionPlanETA());
+                goalTrackerAction.setCustomBenchMarkValue(dto.getCustomBenchMarkValue());
+                goalTrackerAction.setAdditionalInfoValue(dto.getAdditionalInfoValue());
             }
 
-            // If action is applicable and a file is attached, store the file
-            if (dto.getIsNotApplicable() != null && dto.getIsNotApplicable()) {
+            // If action is not applicable or excluded and a file is attached, store the file
+            if ((dto.getIsNotApplicable() != null && dto.getIsNotApplicable())
+                    || (dto.getIsExcluded() != null && dto.getIsExcluded())) {
                 MultipartFile file = actionIdToFileMap.get(dto.getActionId());
                 if (file != null && !file.isEmpty()) {
                     try {
@@ -169,6 +182,9 @@ public class TrackerServiceImpl implements TrackerService {
         // Save or update the tracker action value
         goalTrackerActionRepository.saveAll(goalTrackerActionsToSave);
 
+        if(note != null && !note.isEmpty()){
+            goalTracker.setDm_notes(note);
+        }
         // Update the overall tracker status and rating based on counts of red and orange ratings
         goalTracker.setStatus(Status.IN_PROGRESS);
         if (redRatingCount >= 2 || (redRatingCount == 1 && orangeRatingCount >= 2)) {
@@ -217,10 +233,24 @@ public class TrackerServiceImpl implements TrackerService {
         return projectDTOs;
     }
 
+    @Override
+    public GoalTrackerDTO addNoteToTracker(int trackerId, String note){
+        GoalTrackerMaster tracker =  goalTrackerMasterRepository.findByTrackerId(trackerId)
+                .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
+        tracker.setQn_notes(note);
 
+        GoalTrackerMaster updatedTracker =  goalTrackerMasterRepository.save(tracker);
+        return new GoalTrackerDTO(updatedTracker);
+    }
 
-    private String calculateRating(String actionValue, TemplateAction action) {
-        String benchmarkValue = action.getBenchmarkValue();
+    private String calculateRating(String actionValue, TemplateAction action, String customBenchMarkValue) {
+        String benchmarkValue;
+        if (customBenchMarkValue != null && !customBenchMarkValue.isEmpty()) {
+            benchmarkValue = customBenchMarkValue;
+        } else {
+            benchmarkValue = action.getBenchmarkValue();
+        }
+
         TemplateAction.ComparisonOperator operator = action.getComparisonOperator();
         TemplateAction.ActionType actionType = action.getActionType();
         TemplateAction.ActionCategory actionCategory = action.getActionCategory();  // Fetching the action category
@@ -236,11 +266,6 @@ public class TrackerServiceImpl implements TrackerService {
         if (actionType == TemplateAction.ActionType.OPTION) {
             return evaluateOptionRating(actionValue, benchmarkValue, actionCategory);
         }
-
-        // Handle string type
-//        if (actionType == TemplateAction.ActionType.STRING) {
-//            return evaluateStringRating(actionValue, benchmarkValue, operator, actionCategory);
-//        }
 
         return "UNKNOWN";
     }

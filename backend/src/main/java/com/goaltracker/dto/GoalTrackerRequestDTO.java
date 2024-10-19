@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class GoalTrackerRequestDTO {
     private String goalTrackerName;
+    private String template_type;
     private String type;
     private LocalDateTime startDate;
     private LocalDateTime endDate;

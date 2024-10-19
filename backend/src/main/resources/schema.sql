@@ -11,8 +11,13 @@ CREATE TABLE goal_tracker_action (
     action_id INT NOT NULL,
     action_value VARCHAR(255),
     action_rating ENUM('RED', 'ORANGE', 'GREEN'),
+    additional_info_value VARCHAR(255),
+    customBenchMarkValue VARCHAR(255),
+    actionPlan TEXT,
     attached_document VARCHAR(255),
     is_not_applicable TINYINT(1),
+    is_excluded TINYINT(1),
+    actionplanETA DATETIME;
     FOREIGN KEY (tracker_id) REFERENCES goal_tracker_master(tracker_id),
     FOREIGN KEY (action_id) REFERENCES template_actions(action_id)
 );
@@ -26,9 +31,14 @@ CREATE TABLE goal_tracker_master (
     end_date DATETIME,
     status VARCHAR(50),
     rating VARCHAR(50),
+    template_type ENUM('T_M', 'FIXED_BID', 'STAFFING') NOT NULL,
+    tracker_type VARCHAR(50) NOT NULL,
+    qn_notes TEXT,
+    dm_notes TEXT,
     is_latest TINYINT(1),
     FOREIGN KEY (project_id) REFERENCES project(project_id)
 );
+
 
 -- Table: project
 CREATE TABLE project (
