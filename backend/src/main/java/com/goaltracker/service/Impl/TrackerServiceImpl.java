@@ -10,6 +10,7 @@ import com.goaltracker.service.Interface.FileStorageService;
 import com.goaltracker.service.Interface.TrackerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -38,8 +39,8 @@ public class TrackerServiceImpl implements TrackerService {
     }
 
     @Override
+    @Transactional
     public GoalTrackerMaster addGoalTracker(GoalTrackerRequestDTO dto) {
-        try {
             Project project = projectRepository.findById(dto.getProjectId())
                     .orElseThrow(() -> new RuntimeException("Project with ID " + dto.getProjectId() + " not found"));
 
@@ -62,12 +63,8 @@ public class TrackerServiceImpl implements TrackerService {
             goalTracker.setRating(null);
             goalTracker.setLatest(dto.getIsLatest());
 
-            GoalTrackerMaster savedGoalTracker = goalTrackerMasterRepository.save(goalTracker);
-            return savedGoalTracker;
+            return goalTrackerMasterRepository.save(goalTracker);
 
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to add GoalTracker");
-        }
     }
 
     @Override
@@ -97,6 +94,7 @@ public class TrackerServiceImpl implements TrackerService {
     }
 
     @Override
+    @Transactional
     public void updateGoalTrackerRating(int trackerId, Rating rating){
         GoalTrackerMaster goalTracker = goalTrackerMasterRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
@@ -105,6 +103,7 @@ public class TrackerServiceImpl implements TrackerService {
     }
 
     @Override
+    @Transactional
     public void addTrackerActionValues(List<ActionValueDTO> actionValueDTO, int trackerId, String note, Map<Integer, MultipartFile> actionIdToFileMap) {
         GoalTrackerMaster goalTracker = goalTrackerMasterRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
@@ -223,6 +222,7 @@ public class TrackerServiceImpl implements TrackerService {
                         project.getProjectId(),
                         project.getProjectName(),
                         project.getTemplateType() != null ? project.getTemplateType().toString() : null,
+                        goalTrackerDTO.getRating(),
                         Collections.singletonList(goalTrackerDTO)
                 );
 

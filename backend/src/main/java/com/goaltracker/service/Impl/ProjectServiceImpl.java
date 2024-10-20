@@ -62,9 +62,15 @@ public class ProjectServiceImpl implements ProjectService {
         // Fetch all goal trackers for the project
         List<GoalTrackerMaster> trackers = goalTrackerMasterRepository.findByProjectProjectId(project.getProjectId());
 
+        final String[] projectRating = {null};
+
         // Map goal trackers to GoalTrackerDTO
         List<GoalTrackerDTO> goalTrackers = trackers.stream()
-                .map(tracker -> new GoalTrackerDTO(
+                .map(tracker -> {
+                    if (tracker.isLatest() && tracker.getRating() != null) {
+                        projectRating[0] = tracker.getRating().toString();
+                    }
+                    return new GoalTrackerDTO(
                         tracker.getTrackerId(),
                         tracker.getGoalTrackerName(),
                         tracker.getStartDate(),
@@ -77,7 +83,8 @@ public class ProjectServiceImpl implements ProjectService {
                         tracker.getQn_notes(),
                         tracker.getDm_notes(),
                         null
-                ))
+                    );
+                })
                 .collect(Collectors.toList());
 
         // Return the ProjectWithGoalTrackersDTO with the project and its goal trackers
@@ -85,6 +92,7 @@ public class ProjectServiceImpl implements ProjectService {
                 project.getProjectId(),
                 project.getProjectName(),
                 project.getTemplateType().name(),
+                projectRating[0],
                 goalTrackers
         );
     }
