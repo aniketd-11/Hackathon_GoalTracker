@@ -169,6 +169,7 @@ const ProfessionalDashboard = () => {
                 <h1 className="text-2xl font-bold text-blue-600 mb-6">
                   Project Dashboard
                 </h1>
+
                 {Isloading ? (
                   <Skeleton />
                 ) : (
@@ -256,7 +257,12 @@ const ProfessionalDashboard = () => {
                                           {index === 0 && (
                                             <div className="flex items-center">
                                               <div className="ml-4">
-                                                <div className="font-medium text-sm">
+                                                <div className="font-medium text-sm flex items-center gap-2">
+                                                  <div
+                                                    className={`w-3 h-3 rounded-full ${getColorClass(
+                                                      tracker?.rating ?? ""
+                                                    )}`}
+                                                  ></div>
                                                   {project?.projectName}
                                                 </div>
                                               </div>
@@ -265,11 +271,6 @@ const ProfessionalDashboard = () => {
                                         </TableCell>
                                         <TableCell className="table-cell">
                                           <div className=" flex items-center gap-2 text-sm font-medium">
-                                            <div
-                                              className={`w-3 h-3 rounded-full ${getColorClass(
-                                                tracker?.rating ?? ""
-                                              )}`}
-                                            ></div>
                                             {tracker.goalTrackerName || "-"}
                                             {(tracker?.status === "INITIATED" ||
                                               tracker?.status ===

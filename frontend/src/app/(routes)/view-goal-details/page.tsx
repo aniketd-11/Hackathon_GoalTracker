@@ -185,12 +185,11 @@ const ViewGoalDetails = () => {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
     const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'image/png' });
+    const blob = new Blob([byteArray], { type: "image/png" });
     const blobUrl = URL.createObjectURL(blob);
 
-    setCurrentImage(blobUrl); 
+    setCurrentImage(blobUrl);
     setShowImageDialog(true);
-
   };
 
   const handleReviewComplete = async (trackerId: number) => {
@@ -214,22 +213,36 @@ const ViewGoalDetails = () => {
                 <Badge className={getRatingColor(goalDetails?.rating || "")}>
                   {goalDetails?.rating}
                 </Badge>
-                <Select onValueChange={(value) => setSelectedRating(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Change rating" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["GREEN", "YELLOW", "RED"]
-                      .filter((rating) => rating !== goalDetails?.rating) // Filter out the current rating
-                      .map((rating) => (
-                        <SelectItem key={rating} value={rating}>
-                          {rating}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                {selectedRating && (
-                  <Button onClick={handleChangeRating}>Submit Rating</Button>
+                {isAuthenticated?.roleName === "QN" && (
+                  <>
+                    <Select onValueChange={(value) => setSelectedRating(value)}>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            goalDetails?.rating
+                              ? `Current rating: ${goalDetails.rating}`
+                              : "Change rating"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["GREEN", "YELLOW", "RED"]
+                          .filter((rating) => rating !== goalDetails?.rating) // Filter out the current rating
+                          .map((rating) => (
+                            <SelectItem key={rating} value={rating}>
+                              {rating}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    {selectedRating &&
+                      selectedRating !== goalDetails?.rating && (
+                        <Button onClick={handleChangeRating}>
+                          Submit Rating
+                        </Button>
+                      )}
+                  </>
                 )}
               </div>
             </CardHeader>
@@ -281,7 +294,9 @@ const ViewGoalDetails = () => {
                   <span className="text-sm text-gray-500">Minor NC</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-sm text-gray-500">** Custom Benchmark Value</span>
+                  <span className="text-sm text-gray-500">
+                    ** Custom Benchmark Value
+                  </span>
                 </div>
               </div>
             </CardHeader>
@@ -309,58 +324,67 @@ const ViewGoalDetails = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                          {action.actionValue ||
-                            (action.isExcluded ? (
-                              <span className="flex items-center gap-2">
-                                Marked as Excluded
-                                {action?.attachedDocument && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <Eye
-                                          className="w-4 h-4 mr-2"
-                                          onClick={() => handleViewAttachedDocument(action?.attachedDocument)}
-                                        />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>View document</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </span>
-                            ) : action.isNotApplicable ? (
-                              <span className="flex items-center gap-2">
-                                Marked as NA
-                                {action?.attachedDocument && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <Eye
-                                          className="w-4 h-4 mr-2"
-                                          onClick={() => handleViewAttachedDocument(action?.attachedDocument)}
-                                        />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>View document</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </span>
-                            ) : (
-                              ""
-                            ))}
+                        {action.actionValue ||
+                          (action.isExcluded ? (
+                            <span className="flex items-center gap-2">
+                              Marked as Excluded
+                              {action?.attachedDocument && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Eye
+                                        className="w-4 h-4 mr-2"
+                                        onClick={() =>
+                                          handleViewAttachedDocument(
+                                            action?.attachedDocument
+                                          )
+                                        }
+                                      />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>View document</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </span>
+                          ) : action.isNotApplicable ? (
+                            <span className="flex items-center gap-2">
+                              Marked as NA
+                              {action?.attachedDocument && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Eye
+                                        className="w-4 h-4 mr-2"
+                                        onClick={() =>
+                                          handleViewAttachedDocument(
+                                            action?.attachedDocument
+                                          )
+                                        }
+                                      />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>View document</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </span>
+                          ) : (
+                            ""
+                          ))}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-1">
                           <span className="text-gray-500">
                             {getOperatorSymbol(action.comparisonOperator)}
                           </span>
-                          <span>{action.customBenchMarkValue && action.customBenchMarkValue.trim() !== '' 
-                                  ? `${action.customBenchMarkValue} **`  
-                                  : action.benchmarkValue
-                                }
+                          <span>
+                            {action.customBenchMarkValue &&
+                            action.customBenchMarkValue.trim() !== ""
+                              ? `${action.customBenchMarkValue} **`
+                              : action.benchmarkValue}
                           </span>
                         </div>
                       </TableCell>

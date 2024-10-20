@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -10,13 +8,6 @@ import {
   Controller,
 } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -35,9 +26,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ChevronRight, ChevronLeft, Target, Eye } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronRight, ChevronLeft, Target, Eye, Edit } from "lucide-react";
 import { getFormDetails } from "@/services/formDetailsService";
-import { Stepper } from "@/components/ui/stepper";
 import Layout from "@/components/Layout/Layout";
 import SidebarLayout from "@/app/sidebar-layout";
 import Skeleton from "@/components/LoadingSkeleton/Skeleton";
@@ -51,8 +42,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useRouter } from "next/navigation";
-
-import dynamic from "next/dynamic";
 import { RootState } from "@/redux/store";
 
 interface FormField {
@@ -68,35 +57,16 @@ interface FormField {
   createdAt: string;
   actionValue?: string | number;
   isNotApplicable?: boolean;
-  attachedDocument?: string | null; // Ensure attachedDocument is defined
+  isExcluded?: boolean;
+  attachedDocument?: string | null;
+  customBenchmarkValue?: string | null;
 }
-
-interface FieldData {
-  value?: string;
-  isNotApplicable?: boolean;
-  attachedDocument?: string | null; // Ensure attachedDocument is defined
-}
-
-type Step = {
-  isNotApplicable: boolean;
-  attachedDocument: File | null;
-};
-
-type FormValues = {
-  steps: Step[];
-};
-
-type FieldError = {
-  steps?: Array<{
-    [key: string]: FieldError | undefined; // Assuming FieldError is the type for your errors
-  }>;
-};
 
 const GoalDetailsForm = () => {
   const route = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState<FormField[]>([]);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState("1");
   const [openDialog, setOpenDialog] = useState(false);
   const [currentActionId, setCurrentActionId] = useState<string | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
@@ -114,12 +84,6 @@ const GoalDetailsForm = () => {
     },
   });
 
-  // const { fields } = useFieldArray({
-  //   control,
-  //   name: "steps",
-  // });
-
-  // If fields are unused, remove them:
   useFieldArray({
     control,
     name: "steps",
@@ -133,12 +97,12 @@ const GoalDetailsForm = () => {
   );
 
   useEffect(() => {
-    if (trackerStatus === "IN_PROGRESS" && formData?.length === 0) {
+    if (trackerStatus === "IN_PROGRESS") {
       fetchActionValues();
     } else {
       fetchFormDetails();
     }
-  }, []);
+  }, [trackerStatus]);
 
   async function fetchFormDetails() {
     try {
@@ -170,32 +134,18 @@ const GoalDetailsForm = () => {
     }
   }
 
-  // const initializeFormState = (data: FormField[]) => {
-  //   const stepsData = [data.slice(0, 4), data.slice(4, 8), data.slice(8)];
-
-  //   stepsData.forEach((stepFields, stepIndex) => {
-  //     stepFields.forEach((field) => {
-  //       setValue(`steps.${stepIndex}.${field.actionId}`, {
-  //         value: field.actionValue || "",
-  //         isNotApplicable: field.isNotApplicable || false,
-  //         attachedDocument: field.attachedDocument || null,
-  //       });
-  //     });
-  //   });
-  // };
-
   const initializeFormState = (data: FormField[]) => {
     const stepsData = [data.slice(0, 4), data.slice(4, 8), data.slice(8)];
 
     stepsData.forEach((stepFields, stepIndex) => {
       stepFields.forEach((field) => {
-        const key = `steps.${stepIndex}.${field.actionId}`; // Construct the key
-
-        // Cast the key to any to bypass strict typing
+        const key = `steps.${stepIndex}.${field.actionId}`;
         setValue(key as any, {
           value: field.actionValue || "",
           isNotApplicable: field.isNotApplicable || false,
+          isExcluded: field.isExcluded || false,
           attachedDocument: field.attachedDocument || null,
+          customBenchmarkValue: field.customBenchmarkValue || null,
         });
       });
     });
@@ -206,43 +156,41 @@ const GoalDetailsForm = () => {
       actionId: number;
       actionValue: string;
       isNotApplicable: boolean;
+      isExcluded: boolean;
+      customBenchmarkValue: string | null;
     }> = [];
 
     const fileUploads: { [key: string]: File } = {};
-    data.steps.forEach((step: number) => {
-      Object.entries(step).forEach(
-        ([actionId, fieldData]: [string, FieldData]) => {
-          const actionValue =
-            fieldData.value !== undefined ? fieldData.value : ""; // Use actionValue if provided
-          const isNotApplicable =
-            fieldData.isNotApplicable || actionValue === ""; // NA if user marked or actionValue is ""
+    data.steps.forEach((step: any) => {
+      Object.entries(step).forEach(([actionId, fieldData]: [string, any]) => {
+        const actionValue =
+          fieldData.value !== undefined ? fieldData.value : "";
+        const isNotApplicable = fieldData.isNotApplicable || actionValue === "";
+        const isExcluded = fieldData.isExcluded || false;
+        const customBenchmarkValue = fieldData.customBenchmarkValue || null;
 
-          // Create the goal object
-          const goal = {
-            actionId: parseInt(actionId, 10),
-            actionValue,
-            isNotApplicable,
-          };
+        const goal = {
+          actionId: parseInt(actionId, 10),
+          actionValue,
+          isNotApplicable,
+          isExcluded,
+          customBenchmarkValue,
+        };
 
-          // Push the goal to formattedGoals if there's an actionValue or if isNotApplicable is true
-          if (actionValue !== "" || isNotApplicable) {
-            formattedGoals.push(goal);
-          }
-
-          if ((fieldData as any).attachedDocument) {
-            fileUploads[`file-${actionId}`] = (
-              fieldData as any
-            ).attachedDocument;
-          }
+        if (actionValue !== "" || isNotApplicable || isExcluded) {
+          formattedGoals.push(goal);
         }
-      );
+
+        if (fieldData.attachedDocument) {
+          fileUploads[`file-${actionId}`] = fieldData.attachedDocument;
+        }
+      });
     });
 
-    // Uncomment the following lines when ready to submit
     const response = await submitTrackingDetails({
       formattedGoals,
       trackerId,
-      fileUploads, // Pass fileUploads here
+      fileUploads,
     });
 
     if (response?.status === 200) {
@@ -261,109 +209,63 @@ const GoalDetailsForm = () => {
     actionId: number,
     isChecked: boolean
   ) => {
-    setValue(
-      `steps.${stepIndex}.${actionId}.isNotApplicable` as keyof FormValues,
-      isChecked as any
-    );
+    setValue(`steps.${stepIndex}.${actionId}.isNotApplicable`, isChecked);
     if (isChecked) {
       setCurrentActionId(`${stepIndex}.${actionId}`);
       setOpenDialog(true);
     } else {
-      setValue(
-        `steps.${stepIndex}.${actionId}.attachedDocument` as keyof FormValues,
-        null as any
-      );
+      setValue(`steps.${stepIndex}.${actionId}.attachedDocument`, null);
     }
+  };
+
+  const handleExcludeToggle = (
+    stepIndex: number,
+    actionId: number,
+    isChecked: boolean
+  ) => {
+    setValue(`steps.${stepIndex}.${actionId}.isExcluded`, isChecked);
   };
 
   const handleProofUpload = (file: File) => {
     if (currentActionId !== null) {
       const [stepIndex, actionId] = currentActionId.split(".");
-      setValue(
-        `steps.${stepIndex}.${actionId}.attachedDocument` as keyof FormValues,
-        file as any
-      );
+      setValue(`steps.${stepIndex}.${actionId}.attachedDocument`, file);
       setOpenDialog(false);
     }
   };
 
-  const handleViewAttachedDocument = (document: string) => {
-    const imageUrl = document?.split("uploads\\")[1];
+  const handleViewAttachedDocument = (
+    event: React.MouseEvent,
+    document: string | null
+  ) => {
+    event.preventDefault();
+    if (!document) return;
+
+    const byteCharacters = atob(document);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: "image/png" });
+    const blobUrl = URL.createObjectURL(blob);
+
+    setCurrentImage(blobUrl);
     setShowImageDialog(true);
-    setCurrentImage(`http://localhost:8080/uploads/${imageUrl}`);
   };
 
   const renderField = (field: FormField, stepIndex: number) => {
     const fieldId = `steps.${stepIndex}.${field.actionId}`;
-    const isNA =
-      watch(`${fieldId}.isNotApplicable` as keyof FormValues) ?? false;
-    const attachedDocument = watch(
-      `${fieldId}.attachedDocument` as keyof FormValues
-    );
+    const isNA = watch(`${fieldId}.isNotApplicable`) ?? false;
+    const isExcluded = watch(`${fieldId}.isExcluded`) ?? false;
+    const attachedDocument = watch(`${fieldId}.attachedDocument`);
+    const customBenchmarkValue = watch(`${fieldId}.customBenchmarkValue`);
 
     return (
-      <div key={field.actionId} className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center space-x-4">
-            <Label
-              htmlFor={`action-${field.actionId}`}
-              className="text-sm font-medium"
-            >
-              {field.actionName}
-            </Label>
-            <div className="flex items-center space-x-2">
-              <Label
-                htmlFor={`na-toggle-${fieldId}`}
-                className="text-sm font-medium text-gray-500"
-              >
-                Mark as NA
-              </Label>
-
-              <Switch
-                id={`na-toggle-${fieldId}`}
-                checked={Boolean(isNA)}
-                onCheckedChange={(checked) =>
-                  handleNAToggle(stepIndex, field.actionId, checked)
-                }
-              />
-              {attachedDocument && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Eye
-                        className="w-4 h-4 mr-2"
-                        onClick={() => {
-                          if (typeof attachedDocument === "string") {
-                            handleViewAttachedDocument(attachedDocument);
-                          }
-                        }}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>View document</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-          </div>
+      <div key={field.actionId} className="mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <div className="flex items-center space-x-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                    <Target size={14} />
-                    <span className="text-xs font-semibold">
-                      {getOperatorSymbol(field.comparisonOperator)}{" "}
-                      {field.benchmarkValue}
-                    </span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Benchmark Value</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Label className="text-sm font-medium">{field.actionName}</Label>
             <Badge
               variant={
                 field.actionCategory === "MAJOR" ? "destructive" : "secondary"
@@ -372,70 +274,150 @@ const GoalDetailsForm = () => {
               {field.actionCategory}
             </Badge>
           </div>
+          <div className="flex items-center space-x-2">
+            {isNA && <Badge variant="outline">NA</Badge>}
+            {isExcluded && <Badge variant="outline">Excluded</Badge>}
+          </div>
         </div>
-        {!isNA && (
-          <Controller
-            name={`${fieldId}.value` as `steps.${number}`} // Ensure you assert correctly
-            control={control}
-            defaultValue={field?.actionValue || ""}
-            render={({ field: { onChange, value } }) => {
-              const selectValue = typeof value === "string" ? value : "";
-              switch (field.actionType) {
-                case "OPTION":
-                  return (
-                    <Select onValueChange={onChange} value={selectValue}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {field.actionOptions?.split(",").map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  );
-                case "PERCENTAGE":
-                  return (
-                    <div className="flex items-center space-x-2">
+
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <Label htmlFor={`na-toggle-${fieldId}`} className="text-sm">
+                Mark as NA
+              </Label>
+              <Switch
+                id={`na-toggle-${fieldId}`}
+                checked={isNA}
+                onCheckedChange={(checked) =>
+                  handleNAToggle(stepIndex, field.actionId, checked)
+                }
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor={`exclude-toggle-${fieldId}`} className="text-sm">
+                Exclude
+              </Label>
+              <Switch
+                id={`exclude-toggle-${fieldId}`}
+                checked={isExcluded}
+                onCheckedChange={(checked) =>
+                  handleExcludeToggle(stepIndex, field.actionId, checked)
+                }
+              />
+            </div>
+          </div>
+
+          {!isNA && (
+            <Controller
+              name={`${fieldId}.value`}
+              control={control}
+              defaultValue={field?.actionValue || ""}
+              render={({ field: { onChange, value } }) => {
+                const selectValue = typeof value === "string" ? value : "";
+                switch (field.actionType) {
+                  case "OPTION":
+                    return (
+                      <Select onValueChange={onChange} value={selectValue}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.actionOptions?.split(",").map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  case "PERCENTAGE":
+                    return (
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          type="number"
+                          onChange={onChange}
+                          value={selectValue}
+                          placeholder="Enter percentage"
+                        />
+                        <span>%</span>
+                      </div>
+                    );
+                  case "NUMERIC":
+                    return (
                       <Input
                         type="number"
                         onChange={onChange}
                         value={selectValue}
-                        placeholder="Enter percentage"
+                        placeholder="Enter number"
                       />
-                      <span>%</span>
-                    </div>
-                  );
-                case "NUMERIC":
-                  return (
-                    <Input
-                      type="number"
-                      onChange={onChange}
-                      value={selectValue}
-                      placeholder="Enter number"
-                    />
-                  );
-                default:
-                  return (
-                    <Input
-                      type="text"
-                      onChange={onChange}
-                      value={selectValue}
-                      placeholder="Enter value"
-                    />
-                  );
-              }
-            }}
-          />
-        )}
-        {/* // Your existing code */}
-        {(
-          errors.steps?.[stepIndex] as Record<string, FieldError | undefined>
-        )?.[field.actionId] && (
-          <p className="text-red-500 text-xs mt-1">This field is required</p>
-        )}
+                    );
+                  default:
+                    return (
+                      <Input
+                        type="text"
+                        onChange={onChange}
+                        value={selectValue}
+                        placeholder="Enter value"
+                      />
+                    );
+                }
+              }}
+            />
+          )}
+
+          <div className="flex items-center space-x-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <div className="flex items-center space-x-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    <Target size={14} />
+                    <span className="text-xs font-semibold">
+                      {getOperatorSymbol(field.comparisonOperator)}{" "}
+                      {customBenchmarkValue || field.benchmarkValue}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Benchmark Value</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const newValue = prompt(
+                  "Enter custom benchmark value",
+                  customBenchmarkValue || field.benchmarkValue
+                );
+                if (newValue !== null) {
+                  setValue(`${fieldId}.customBenchmarkValue`, newValue);
+                }
+              }}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {attachedDocument && (
+            <div className="flex items-center space-x-2">
+              <Label className="text-sm">Attached Document:</Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(event) => {
+                  if (typeof attachedDocument === "string") {
+                    handleViewAttachedDocument(event, attachedDocument);
+                  }
+                }}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                View
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -460,58 +442,66 @@ const GoalDetailsForm = () => {
   return (
     <Layout>
       <SidebarLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Card className="w-full max-w-4xl mx-auto">
-            {isLoading ? (
-              <Skeleton />
-            ) : (
-              <>
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold text-center">
-                    Goal Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Stepper
-                    steps={steps.map((step) => step.title)}
-                    currentStep={currentStep}
-                    className="mb-8"
-                  />
-                  <form>
-                    {steps[currentStep].fields.map((field) =>
-                      renderField(field, currentStep)
-                    )}
-                  </form>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      setCurrentStep((prev) => Math.max(0, prev - 1))
-                    }
-                    disabled={currentStep === 0}
-                  >
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                  </Button>
-                  {currentStep < steps.length - 1 ? (
-                    <Button
-                      onClick={() =>
-                        setCurrentStep((prev) =>
-                          Math.min(steps.length - 1, prev + 1)
-                        )
-                      }
+        <div className="container mx-auto py-8">
+          <h1 className="text-2xl font-bold text-center mb-8">Goal Details</h1>
+          {isLoading ? (
+            <Skeleton />
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Tabs
+                value={currentStep}
+                onValueChange={setCurrentStep}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-3 mb-8">
+                  {steps.map((step) => (
+                    <TabsTrigger
+                      key={step.title}
+                      value={step.title}
+                      className="text-sm"
                     >
-                      Next <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button type="submit" onClick={handleSubmit(onSubmit)}>
-                      Submit
-                    </Button>
-                  )}
-                </CardFooter>
-              </>
-            )}
-          </Card>
+                      Step {step.title}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                {steps.map((step, index) => (
+                  <TabsContent key={step.title} value={step.title}>
+                    <div className="space-y-6">
+                      {step.fields.map((field) => renderField(field, index))}
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+              <div className="flex justify-between mt-8">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    setCurrentStep(
+                      (prev) => `${Math.max(1, parseInt(prev) - 1)}`
+                    )
+                  }
+                  disabled={currentStep === "1"}
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+                </Button>
+                {currentStep !== "3" ? (
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      setCurrentStep(
+                        (prev) => `${Math.min(3, parseInt(prev) + 1)}`
+                      )
+                    }
+                  >
+                    Next <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button type="submit">Submit</Button>
+                )}
+              </div>
+            </form>
+          )}
         </div>
       </SidebarLayout>
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -534,31 +524,27 @@ const GoalDetailsForm = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {showImageDialog && (
-        <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Attached Document</DialogTitle>
-            </DialogHeader>
-            {currentImage && (
-              <div className="relative w-full h-[60vh]">
-                <img
-                  src={currentImage}
-                  alt="Attached Document"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
-            <DialogFooter>
-              <Button onClick={() => setShowImageDialog(false)}>Close</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Attached Document</DialogTitle>
+          </DialogHeader>
+          {currentImage && (
+            <div className="relative w-full h-[60vh]">
+              <img
+                src={currentImage}
+                alt="Attached Document"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setShowImageDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
 
-export default dynamic(() => Promise.resolve(GoalDetailsForm), {
-  ssr: false,
-});
+export default GoalDetailsForm;
