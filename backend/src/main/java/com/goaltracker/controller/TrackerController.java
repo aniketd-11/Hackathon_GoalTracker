@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.goaltracker.dto.*;
 import com.goaltracker.model.*;
 import com.goaltracker.service.Interface.*;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -141,7 +142,7 @@ public class TrackerController {
     @PostMapping("/{trackerId}/addNote")
     public ResponseEntity<?> addQnNotesToTracker(@PathVariable int trackerId, @RequestBody NoteRequestDTO dto){
         try {
-            GoalTrackerDTO trackerData = trackerService.addNoteToTracker(trackerId, dto.getNote());
+            GoalTrackerDTO trackerData = trackerService.addNoteToTracker(trackerId, dto);
             Map<String, Object> response = new HashMap<>();
             response.put("message","Note added successfully");
             response.put("trackerData:",trackerData);
@@ -149,6 +150,26 @@ public class TrackerController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error adding note: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("addActionPlan")
+    public ResponseEntity<?> addActionPlan(@RequestParam int trackerId, @RequestBody ActionPlanRequestDTO dto){
+        try {
+            ActionValueDTO actionData = trackerService.addActionPlanByTracker(trackerId, dto);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Data added successfully");
+            response.put("actionData", actionData);
+            return ResponseEntity.ok(response);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Action not found: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid request: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error adding action plan: " + e.getMessage());
         }
     }
 }
