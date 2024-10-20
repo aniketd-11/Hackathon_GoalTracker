@@ -4,6 +4,7 @@ import com.goaltracker.dto.GoalTrackerDTO;
 import com.goaltracker.dto.ProjectWithGoalTrackerDTO;
 import com.goaltracker.model.GoalTrackerMaster;
 import com.goaltracker.model.Project;
+import com.goaltracker.model.Status;
 import com.goaltracker.model.User;
 import com.goaltracker.repository.GoalTrackerMasterRepository;
 import com.goaltracker.repository.ProjectRepository;
@@ -43,7 +44,7 @@ public class ProjectServiceImpl implements ProjectService {
         // Fetch the projects assigned to the DM
         return userProjectMappingRepository.findByUserId(user.getId())
                 .stream()
-                .map(mapping -> mapToProjectWithGoalTrackersDTO(mapping.getProject()))
+                .map(mapping -> mapToProjectWithGoalTrackersDTO(mapping.getProject(), Optional.of("DM")))
                 .collect(Collectors.toList());
     }
 
@@ -53,14 +54,21 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Map projects and their goal trackers to DTOs
         return projects.stream()
-                .map(this::mapToProjectWithGoalTrackersDTO)
+                .map(project -> mapToProjectWithGoalTrackersDTO(project, Optional.empty()))
                 .collect(Collectors.toList());
     }
 
     // Helper method to map Project and its goal trackers to a DTO
-    private ProjectWithGoalTrackerDTO mapToProjectWithGoalTrackersDTO(Project project) {
+    private ProjectWithGoalTrackerDTO mapToProjectWithGoalTrackersDTO(Project project,Optional<String> role) {
         // Fetch all goal trackers for the project
-        List<GoalTrackerMaster> trackers = goalTrackerMasterRepository.findByProjectProjectId(project.getProjectId());
+        List<GoalTrackerMaster> trackers;
+        if(role.isPresent()){
+            trackers = goalTrackerMasterRepository.findByProjectProjectId(project.getProjectId());
+        }
+        else {
+            trackers = goalTrackerMasterRepository.findByProjectProjectIdAndExcludeDraft(project.getProjectId(), Status.DRAFT);
+        }
+
 
         final String[] projectRating = {null};
 
