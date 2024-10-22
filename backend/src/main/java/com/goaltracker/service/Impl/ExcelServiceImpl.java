@@ -34,7 +34,7 @@ public class ExcelServiceImpl implements ExcelService {
 
             // Resize all columns to fit the content
             for (int i = 0; i < templateActions.size() + 5; i++) { // +5 for Project Name, Tracker Name, and Date columns
-                sheet.autoSizeColumn(i);
+                sheet.setColumnWidth(i,5000);
             }
 
             // Write to ByteArrayOutputStream
@@ -56,6 +56,7 @@ public class ExcelServiceImpl implements ExcelService {
         headerRow.createCell(3).setCellValue("Start Date");
         headerRow.createCell(4).setCellValue("End Date");
 
+
         // Create dynamic columns for each TemplateAction
         int colIdx = 5;
         for (TemplateAction action : templateActions) {
@@ -63,9 +64,9 @@ public class ExcelServiceImpl implements ExcelService {
 
             // Apply color based on the actionCategory (MAJOR -> Red, MINOR -> Yellow)
             if ("MAJOR".equalsIgnoreCase(action.getActionCategory().toString())) {
-                headerRow.getCell(colIdx).setCellStyle(createMajorCategoryStyle(workbook));
+                headerRow.getCell(colIdx).setCellStyle(createRedStyle(workbook));
             } else if ("MINOR".equalsIgnoreCase(action.getActionCategory().toString())) {
-                headerRow.getCell(colIdx).setCellStyle(createMinorCategoryStyle(workbook));
+                headerRow.getCell(colIdx).setCellStyle(createYellowStyle(workbook));
             } else {
                 headerRow.getCell(colIdx).setCellStyle(headerStyle);  // Default style for other categories
             }
@@ -82,10 +83,16 @@ public class ExcelServiceImpl implements ExcelService {
     private int createTrackerRow(Sheet sheet, int rowIdx, ProjectWithGoalTrackerDTO project, GoalTrackerDTO tracker, List<TemplateAction> templateActions, Workbook workbook) {
         Row trackerRow = sheet.createRow(rowIdx++);
 
+        CellStyle ratingStyle = getRatingStyle(tracker, workbook);
+
+        // Apply rating style to the Project Name cell
+        Cell projectNameCell = trackerRow.createCell(0);
+        projectNameCell.setCellValue(project.getProjectName());
+        projectNameCell.setCellStyle(ratingStyle);
+
         // Fill in the fixed columns: Project Name, Tracker Name, Goal (Sprint/Release), Start Date, and End Date
-        trackerRow.createCell(0).setCellValue(project.getProjectName());
         trackerRow.createCell(1).setCellValue(tracker.getGoalTrackerName());
-        trackerRow.createCell(2).setCellValue(tracker.getGoalTrackerName());
+        trackerRow.createCell(2).setCellValue(tracker.getTrackerType());
         trackerRow.createCell(3).setCellValue(tracker.getStartDate().toString());
         trackerRow.createCell(4).setCellValue(tracker.getEndDate().toString());
 
@@ -124,11 +131,42 @@ public class ExcelServiceImpl implements ExcelService {
         style.setAlignment(HorizontalAlignment.CENTER);
         style.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setWrapText(true);
         return style;
     }
 
-    // Cell Style for MAJOR action category (Red)
-    private CellStyle createMajorCategoryStyle(Workbook workbook) {
+    private CellStyle getRatingStyle(GoalTrackerDTO tracker, Workbook workbook) {
+        // Check if the tracker has a rating and return the appropriate style
+        if (tracker.getRating() != null) {
+            switch (tracker.getRating().toUpperCase()) {
+                case "RED":
+                    return createRedStyle(workbook);
+                case "GREEN":
+                    return createGreenStyle(workbook);
+                case "YELLOW":
+                    return createYellowStyle(workbook);
+                default:
+                    return createHeaderCellStyle(workbook);
+            }
+        } else {
+            // Default style if no rating is present
+            return createHeaderCellStyle(workbook);
+        }
+    }
+
+    private CellStyle createGreenStyle(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setBold(true);
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setWrapText(true);
+        return style;
+    }
+
+    private CellStyle createRedStyle(Workbook workbook) {
         Font font = workbook.createFont();
         font.setBold(true);
         CellStyle style = workbook.createCellStyle();
@@ -136,11 +174,11 @@ public class ExcelServiceImpl implements ExcelService {
         style.setAlignment(HorizontalAlignment.CENTER);
         style.setFillForegroundColor(IndexedColors.RED.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setWrapText(true);
         return style;
     }
 
-    // Cell Style for MINOR action category (Yellow)
-    private CellStyle createMinorCategoryStyle(Workbook workbook) {
+    private CellStyle createYellowStyle(Workbook workbook) {
         Font font = workbook.createFont();
         font.setBold(true);
         CellStyle style = workbook.createCellStyle();
@@ -148,6 +186,8 @@ public class ExcelServiceImpl implements ExcelService {
         style.setAlignment(HorizontalAlignment.CENTER);
         style.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setWrapText(true);
         return style;
     }
+
 }

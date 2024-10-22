@@ -2,10 +2,11 @@
 export async function createGoalTracker(data: {
   goalTrackerName: string;
   type: string;
+  template_type: string | null;
   startDate: string | undefined;
   endDate: string | undefined;
-  projectId: number | undefined;
   isLatest: boolean;
+  projectId: number | undefined;
 }) {
   try {
     const response = await fetch(`/api/createGoalTracker`, {

@@ -1,32 +1,39 @@
 import React from "react";
+import {
+  // TableBody,
+  // TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-const TableHeading = () => {
+const TableHeading = ({ role = "" }) => {
   return (
-    <thead className="bg-white sticky top-0 ">
-      <tr>
-        <th scope="col" className="table-header">
+    <TableHeader className="bg-white sticky top-0 ">
+      <TableRow>
+        <TableHead scope="col" className="table-header">
           Project
-        </th>
-        <th scope="col" className="table-header">
+        </TableHead>
+        <TableHead scope="col" className="table-header">
           Sprint/Milestone
-        </th>
-        <th scope="col" className="table-header">
+        </TableHead>
+        <TableHead scope="col" className="table-header">
           Template type
-        </th>
-        <th scope="col" className="table-header">
+        </TableHead>
+        <TableHead scope="col" className="table-header">
           Status
-        </th>
-        <th scope="col" className="table-header">
+        </TableHead>
+        <TableHead scope="col" className="table-header">
           Start Date
-        </th>
-        <th scope="col" className="table-header">
+        </TableHead>
+        <TableHead scope="col" className="table-header">
           Due date
-        </th>
-        <th scope="col" className="table-header">
-          Actions
-        </th>
-      </tr>
-    </thead>
+        </TableHead>
+        <TableHead scope="col" className="table-header">
+          {role === "dm" ? "QN notes" : "DM notes"}
+        </TableHead>
+      </TableRow>
+    </TableHeader>
   );
 };
 

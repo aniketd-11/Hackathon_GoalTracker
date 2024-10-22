@@ -7,6 +7,11 @@ export async function submitTrackingDetails({
     actionId: number;
     actionValue: string;
     isNotApplicable: boolean;
+    isExcluded: boolean;
+    customBenchmarkValue: string | number | null;
+    actionPlan?: string | undefined;
+    actionPlanETA?: Date | null | undefined;
+    additionalInfoValue: null;
   }[];
   trackerId: number;
   fileUploads: { [key: string]: File }; // Add type for fileUploads

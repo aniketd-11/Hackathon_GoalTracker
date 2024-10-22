@@ -10,7 +10,6 @@ export async function GET(
     const accountId = params.accountId;
 
     const api = `${process.env.BACKEND_API}/dashboard/qn/projects?accountId=${accountId}`;
-    console.log(api);
 
     const response = await axios.get(api, {
       httpsAgent: new https.Agent({ rejectUnauthorized: false }),

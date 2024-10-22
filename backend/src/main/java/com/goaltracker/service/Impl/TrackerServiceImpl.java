@@ -8,8 +8,10 @@ import com.goaltracker.repository.ProjectRepository;
 import com.goaltracker.repository.TemplateActionsRepository;
 import com.goaltracker.service.Interface.FileStorageService;
 import com.goaltracker.service.Interface.TrackerService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -38,8 +40,8 @@ public class TrackerServiceImpl implements TrackerService {
     }
 
     @Override
+    @Transactional
     public GoalTrackerMaster addGoalTracker(GoalTrackerRequestDTO dto) {
-        try {
             Project project = projectRepository.findById(dto.getProjectId())
                     .orElseThrow(() -> new RuntimeException("Project with ID " + dto.getProjectId() + " not found"));
 
@@ -56,16 +58,14 @@ public class TrackerServiceImpl implements TrackerService {
             goalTracker.setStartDate(dto.getStartDate());
             goalTracker.setEndDate(dto.getEndDate());
             goalTracker.setProject(project);
-            goalTracker.setStatus(Status.INITIATED);
+            goalTracker.setStatus(Status.DRAFT);
+            goalTracker.setTemplateType(TemplateTypes.valueOf(dto.getTemplate_type()));
+            goalTracker.setTrackerType(dto.getType());
             goalTracker.setRating(null);
             goalTracker.setLatest(dto.getIsLatest());
 
-            GoalTrackerMaster savedGoalTracker = goalTrackerMasterRepository.save(goalTracker);
-            return savedGoalTracker;
+            return goalTrackerMasterRepository.save(goalTracker);
 
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to add GoalTracker");
-        }
     }
 
     @Override
@@ -95,6 +95,7 @@ public class TrackerServiceImpl implements TrackerService {
     }
 
     @Override
+    @Transactional
     public void updateGoalTrackerRating(int trackerId, Rating rating){
         GoalTrackerMaster goalTracker = goalTrackerMasterRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
@@ -103,7 +104,8 @@ public class TrackerServiceImpl implements TrackerService {
     }
 
     @Override
-    public void addTrackerActionValues(List<ActionValueDTO> actionValueDTO, int trackerId, Map<Integer, MultipartFile> actionIdToFileMap) {
+    @Transactional
+    public void addTrackerActionValues(List<ActionValueDTO> actionValueDTO, int trackerId, String note, Map<Integer, MultipartFile> actionIdToFileMap) {
         GoalTrackerMaster goalTracker = goalTrackerMasterRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
 
@@ -115,8 +117,8 @@ public class TrackerServiceImpl implements TrackerService {
 
             // Calculate the rating only if the action is applicable
             String rating = null;
-            if(!dto.getIsNotApplicable()){
-                rating = calculateRating(dto.getActionValue(), action);
+            if(!dto.getIsNotApplicable() && !dto.getIsExcluded() && (dto.getAdditionalInfoValue() == null || dto.getAdditionalInfoValue().isEmpty())){
+                rating = calculateRating(dto.getActionValue(), action,dto.getCustomBenchMarkValue());
                 if (Objects.equals(rating, Rating.RED.toString())) {
                     redRatingCount++;
                 }
@@ -136,6 +138,11 @@ public class TrackerServiceImpl implements TrackerService {
                 goalTrackerAction.setActionValue(dto.getActionValue());
                 goalTrackerAction.setActionRating(rating != null ? Rating.valueOf(rating) : null);
                 goalTrackerAction.setIsNotApplicable(dto.getIsNotApplicable());
+                goalTrackerAction.setIsExcluded(dto.getIsExcluded());
+                goalTrackerAction.setActionPlan(dto.getActionPlan());
+                goalTrackerAction.setActionplanETA(dto.getActionPlanETA());
+                goalTrackerAction.setCustomBenchMarkValue(dto.getCustomBenchMarkValue());
+                goalTrackerAction.setAdditionalInfoValue(dto.getAdditionalInfoValue());
             } else {
                 // Create a new record
                 goalTrackerAction = new GoalTrackerAction();
@@ -144,10 +151,16 @@ public class TrackerServiceImpl implements TrackerService {
                 goalTrackerAction.setActionValue(dto.getActionValue());
                 goalTrackerAction.setActionRating(rating != null ? Rating.valueOf(rating) : null);
                 goalTrackerAction.setIsNotApplicable(dto.getIsNotApplicable());
+                goalTrackerAction.setIsExcluded(dto.getIsExcluded());
+                goalTrackerAction.setActionPlan(dto.getActionPlan());
+                goalTrackerAction.setActionplanETA(dto.getActionPlanETA());
+                goalTrackerAction.setCustomBenchMarkValue(dto.getCustomBenchMarkValue());
+                goalTrackerAction.setAdditionalInfoValue(dto.getAdditionalInfoValue());
             }
 
-            // If action is applicable and a file is attached, store the file
-            if (dto.getIsNotApplicable() != null && dto.getIsNotApplicable()) {
+            // If action is not applicable or excluded and a file is attached, store the file
+            if ((dto.getIsNotApplicable() != null && dto.getIsNotApplicable())
+                    || (dto.getIsExcluded() != null && dto.getIsExcluded())) {
                 MultipartFile file = actionIdToFileMap.get(dto.getActionId());
                 if (file != null && !file.isEmpty()) {
                     try {
@@ -169,8 +182,11 @@ public class TrackerServiceImpl implements TrackerService {
         // Save or update the tracker action value
         goalTrackerActionRepository.saveAll(goalTrackerActionsToSave);
 
+        if(note != null && !note.isEmpty()){
+            goalTracker.setDm_notes(note);
+        }
         // Update the overall tracker status and rating based on counts of red and orange ratings
-        goalTracker.setStatus(Status.IN_PROGRESS);
+        goalTracker.setStatus(Status.INITIATED);
         if (redRatingCount >= 2 || (redRatingCount == 1 && orangeRatingCount >= 2)) {
             goalTracker.setRating(Rating.RED);
         } else if ((redRatingCount == 1 && orangeRatingCount <= 1) || (redRatingCount == 0 && orangeRatingCount >= 1)) {
@@ -207,6 +223,7 @@ public class TrackerServiceImpl implements TrackerService {
                         project.getProjectId(),
                         project.getProjectName(),
                         project.getTemplateType() != null ? project.getTemplateType().toString() : null,
+                        goalTrackerDTO.getRating(),
                         Collections.singletonList(goalTrackerDTO)
                 );
 
@@ -217,10 +234,48 @@ public class TrackerServiceImpl implements TrackerService {
         return projectDTOs;
     }
 
+    @Override
+    public GoalTrackerDTO addNoteToTracker(int trackerId, NoteRequestDTO dto){
+        GoalTrackerMaster tracker =  goalTrackerMasterRepository.findByTrackerId(trackerId)
+                .orElseThrow(() -> new RuntimeException("Tracker with ID " + trackerId + " not found"));
+        if(dto.getRole().equalsIgnoreCase("DM")){
+            tracker.setDm_notes(dto.getNote());
+        }
+        else{
+            tracker.setQn_notes(dto.getNote());
+        }
 
+        GoalTrackerMaster updatedTracker =  goalTrackerMasterRepository.save(tracker);
+        return new GoalTrackerDTO(updatedTracker);
+    }
 
-    private String calculateRating(String actionValue, TemplateAction action) {
-        String benchmarkValue = action.getBenchmarkValue();
+    @Override
+    public ActionValueDTO addActionPlanByTracker(int trackerId, ActionPlanRequestDTO dto){
+       Optional<GoalTrackerAction> action = goalTrackerActionRepository
+                .findByGoalTracker_TrackerIdAndTemplateAction_ActionId(trackerId, dto.getActionId());
+       if(action.isPresent()){
+           GoalTrackerAction existingAction = action.get();
+           if(existingAction.getActionRating() != Rating.GREEN){
+               existingAction.setActionPlan(dto.getActionPlan());
+               existingAction.setActionplanETA(dto.getActionPlanETA());
+               goalTrackerActionRepository.save(existingAction);
+               return convertToActionValueDTO(existingAction);
+           }
+           else{
+               throw new IllegalArgumentException("Action cannot be modified because its rating is GREEN.");
+           }
+       }
+        throw new EntityNotFoundException("Action with tracker ID " + trackerId + " and action ID " + dto.getActionId() + " not found.");
+    }
+
+    private String calculateRating(String actionValue, TemplateAction action, String customBenchMarkValue) {
+        String benchmarkValue;
+        if (customBenchMarkValue != null && !customBenchMarkValue.isEmpty()) {
+            benchmarkValue = customBenchMarkValue;
+        } else {
+            benchmarkValue = action.getBenchmarkValue();
+        }
+
         TemplateAction.ComparisonOperator operator = action.getComparisonOperator();
         TemplateAction.ActionType actionType = action.getActionType();
         TemplateAction.ActionCategory actionCategory = action.getActionCategory();  // Fetching the action category
@@ -236,11 +291,6 @@ public class TrackerServiceImpl implements TrackerService {
         if (actionType == TemplateAction.ActionType.OPTION) {
             return evaluateOptionRating(actionValue, benchmarkValue, actionCategory);
         }
-
-        // Handle string type
-//        if (actionType == TemplateAction.ActionType.STRING) {
-//            return evaluateStringRating(actionValue, benchmarkValue, operator, actionCategory);
-//        }
 
         return "UNKNOWN";
     }
@@ -298,5 +348,14 @@ public class TrackerServiceImpl implements TrackerService {
 
     private List<GoalTrackerActionDTO> fetchActionsForTracker(int trackerId) {
         return goalTrackerActionRepository.findActionsByTrackerId(trackerId);
+    }
+
+    private ActionValueDTO convertToActionValueDTO(GoalTrackerAction action) {
+        ActionValueDTO dto = new ActionValueDTO();
+
+        dto.setActionId(action.getTemplateAction().getActionId());
+        dto.setActionPlan(action.getActionPlan());
+        dto.setActionPlanETA(action.getActionplanETA());
+        return dto;
     }
 }

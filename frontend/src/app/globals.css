@@ -10,7 +10,7 @@
 /* ========================================== TAILWIND STYLES */
 @layer base {
   :root {
-    background: #fafafa;
+    background: #fff;
     color: #0b0a0a;
     margin: 0;
   }

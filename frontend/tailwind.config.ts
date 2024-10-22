@@ -24,21 +24,21 @@ const config = {
     extend: {
       colors: {
         blue: {
-          100: "#B4C6EE",
-          400: "#417BFF",
-          500: "#3371FF",
+          "100": "#B4C6EE",
+          "400": "#417BFF",
+          "500": "#3371FF",
         },
         red: {
-          400: "#DD4F56",
-          500: "#DC4349",
+          "400": "#DD4F56",
+          "500": "#DC4349",
         },
         dark: {
-          100: "#09111F",
-          200: "#0B1527",
-          300: "#0F1C34",
-          350: "#12213B",
-          400: "#27344D",
-          500: "#2E3D5B",
+          "100": "#09111F",
+          "200": "#0B1527",
+          "300": "#0F1C34",
+          "350": "#12213B",
+          "400": "#27344D",
+          "500": "#2E3D5B",
         },
       },
       fontFamily: {
@@ -46,12 +46,20 @@ const config = {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+          from: {
+            height: "0",
+          },
+          to: {
+            height: "var(--radix-accordion-content-height)",
+          },
         },
         "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+          from: {
+            height: "var(--radix-accordion-content-height)",
+          },
+          to: {
+            height: "0",
+          },
         },
       },
       backgroundImage: {

@@ -25,7 +25,7 @@ const SelectTemplate = ({ setTemplate, page }: SelectTemplateProps) => {
           }
         }}
       >
-        <SelectTrigger className="w-44 bg-blue-50 border-blue-200 hover:border-blue-300 focus:ring-blue-500">
+        <SelectTrigger className="w-44">
           <SelectValue placeholder="Select template" />
         </SelectTrigger>
         <SelectContent>
