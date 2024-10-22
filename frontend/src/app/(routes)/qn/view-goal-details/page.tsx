@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { useSelector } from "react-redux";
+
 import { changeStatusService } from "@/services/changeStatusService";
 import React from "react";
 import {
@@ -46,6 +46,10 @@ import {
 import { useRouter } from "next/navigation";
 import { changeRatingService } from "@/services/changeRatingService";
 import { RootState } from "@/redux/store";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { addNoteService } from "@/services/addNoteService";
+import { toast } from "react-toastify";
 
 interface ActionValue {
   actionName: string;
@@ -58,6 +62,8 @@ interface ActionValue {
   isNotApplicable: boolean;
   isExcluded: boolean;
   attachedDocument: string | null;
+  actionPlan: string;
+  actionplanETA: Date;
 }
 
 interface GoalDetails {
@@ -68,6 +74,7 @@ interface GoalDetails {
   status: string;
   rating: string;
   actions: ActionValue[];
+  dmNotes: string;
 }
 
 const ViewGoalDetails = () => {
@@ -76,11 +83,19 @@ const ViewGoalDetails = () => {
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [selectedRating, setSelectedRating] = useState("");
+  const [actionPlan, setActionPlan] = useState("");
+  const [actionPlanETA, setActionPlanETA] = useState<Date | null>(null);
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const [note, setNote] = useState("");
 
   const trackerId = useAppSelector(
     (state: RootState) => state.trackerDetails?.trackerId
   );
-  const isAuthenticated = useSelector((state: RootState) => state.auth.user);
+  const userRole = useAppSelector(
+    (state: RootState) => state.auth.user?.roleName
+  );
+
+  // const isAuthenticated = useSelector((state: RootState) => state.auth.user);
 
   const route = useRouter();
 
@@ -175,31 +190,60 @@ const ViewGoalDetails = () => {
     );
   }
 
-  const handleViewAttachedDocument = (document: string | null) => {
-    if (!document) return;
+  const handleViewAttachedDocument = (
+    plan: string,
+    eta: Date | null,
+    document?: string | null // Move the optional parameter to the end
+  ) => {
+    // Check if document is provided
+    if (document) {
+      // Create a Blob from the Base64 string
+      const byteCharacters = atob(document);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/png" });
+      const blobUrl = URL.createObjectURL(blob);
 
-    // Create a Blob from the Base64 string
-    const byteCharacters = atob(document);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
+      setCurrentImage(blobUrl);
+    } else {
+      setCurrentImage(null);
     }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: "image/png" });
-    const blobUrl = URL.createObjectURL(blob);
 
-    setCurrentImage(blobUrl);
+    // Set action plan and ETA regardless of document existence
+    setActionPlan(plan);
+    setActionPlanETA(eta);
     setShowImageDialog(true);
   };
 
-  const handleReviewComplete = async (trackerId: number) => {
-    await changeStatusService(trackerId, "CLOSED");
-    route.push("/dashboard/accounts");
+  const handleStatusChange = async (trackerId: number, status: string) => {
+    const response = await changeStatusService(trackerId, status);
+    // route.push("/dashboard/accounts");
+    if (response?.status == 200) {
+      fetchActionValues();
+      toast.success("Status changed successfully");
+    } else {
+      toast.error("Error while changing status");
+    }
   };
 
   const handleChangeRating = async () => {
     await changeRatingService(trackerId, selectedRating);
     route.push("/dashboard/accounts");
+  };
+
+  const addNote = async () => {
+    const response = await addNoteService(trackerId, userRole, note);
+    if (response?.status == 200) {
+      toast.success("Note added successfully.");
+    } else {
+      toast.error("Error adding note");
+    }
+
+    setIsNoteOpen(false);
+    fetchActionValues();
   };
 
   return (
@@ -213,7 +257,8 @@ const ViewGoalDetails = () => {
                 <Badge className={getRatingColor(goalDetails?.rating || "")}>
                   {goalDetails?.rating}
                 </Badge>
-                {isAuthenticated?.roleName === "QN" && (
+
+                {goalDetails?.status !== "IN_CLOSURE" && (
                   <>
                     <Select onValueChange={(value) => setSelectedRating(value)}>
                       <SelectTrigger>
@@ -238,7 +283,7 @@ const ViewGoalDetails = () => {
 
                     {selectedRating &&
                       selectedRating !== goalDetails?.rating && (
-                        <Button onClick={handleChangeRating}>
+                        <Button onClick={handleChangeRating} className="w-fit">
                           Submit Rating
                         </Button>
                       )}
@@ -248,13 +293,39 @@ const ViewGoalDetails = () => {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
+                <div className="flex flex-col gap-1">
                   <h3 className="font-semibold">
                     {goalDetails?.goalTrackerName}
                   </h3>
                   <p className="text-sm text-gray-500">
                     Tracker ID: {goalDetails?.trackerId}
                   </p>
+                  <span className="text-sm text-gray-500">
+                    Status :
+                    {(() => {
+                      switch (goalDetails?.status) {
+                        case "DRAFT":
+                          return "In Draft";
+                        case "INITIATED":
+                          return "Initiated";
+                        case "IN_REVIEW":
+                          return "In Review";
+                        case "IN_PROGRESS":
+                          return "In Progress";
+                        case "IN_CLOSURE":
+                          return "In Closure";
+                        case "CLOSED":
+                          return "Closed";
+                        default:
+                          return "No status";
+                      }
+                    })()}
+                  </span>
+                  {goalDetails?.dmNotes && (
+                    <span className="text-sm text-gray-500">
+                      DM notes: {goalDetails?.dmNotes || ""}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-500 justify-between">
                   <span className="flex gap-2 items-center">
@@ -265,15 +336,58 @@ const ViewGoalDetails = () => {
                     -{" "}
                     {new Date(goalDetails?.endDate || "").toLocaleDateString()}
                   </span>
-                  {isAuthenticated?.roleName === "QN" && (
-                    <Button
-                      onClick={() =>
-                        handleReviewComplete(goalDetails?.trackerId ?? 0)
-                      }
-                    >
-                      Review complete
-                    </Button>
-                  )}
+
+                  <div className="flex flex-col gap-2 items-end">
+                    {goalDetails?.status === "INITIATED" && (
+                      <Button
+                        onClick={() =>
+                          handleStatusChange(
+                            goalDetails?.trackerId ?? 0,
+                            "IN_REVIEW"
+                          )
+                        }
+                        className="w-fit"
+                      >
+                        Start review
+                      </Button>
+                    )}
+
+                    {goalDetails?.status === "IN_REVIEW" && (
+                      <Button
+                        onClick={() =>
+                          handleStatusChange(
+                            goalDetails?.trackerId ?? 0,
+                            "IN_PROGRESS"
+                          )
+                        }
+                        className="w-fit"
+                      >
+                        Change Status to In Progress
+                      </Button>
+                    )}
+
+                    {goalDetails?.status === "IN_CLOSURE" && (
+                      <Button
+                        onClick={() =>
+                          handleStatusChange(
+                            goalDetails?.trackerId ?? 0,
+                            "CLOSED"
+                          )
+                        }
+                        className="w-fit"
+                      >
+                        Change Status to Closed
+                      </Button>
+                    )}
+                    {goalDetails?.status !== "IN_CLOSURE" && (
+                      <Button
+                        onClick={() => setIsNoteOpen(true)}
+                        className="w-fit"
+                      >
+                        Add QN notes
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -324,56 +438,84 @@ const ViewGoalDetails = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {action.actionValue ||
-                          (action.isExcluded ? (
-                            <span className="flex items-center gap-2">
-                              Marked as Excluded
-                              {action?.attachedDocument && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Eye
-                                        className="w-4 h-4 mr-2"
-                                        onClick={() =>
-                                          handleViewAttachedDocument(
-                                            action?.attachedDocument
-                                          )
-                                        }
-                                      />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>View document</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </span>
-                          ) : action.isNotApplicable ? (
-                            <span className="flex items-center gap-2">
-                              Marked as NA
-                              {action?.attachedDocument && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Eye
-                                        className="w-4 h-4 mr-2"
-                                        onClick={() =>
-                                          handleViewAttachedDocument(
-                                            action?.attachedDocument
-                                          )
-                                        }
-                                      />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>View document</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </span>
-                          ) : (
-                            ""
-                          ))}
+                        {action.isExcluded ? (
+                          <span className="flex items-center gap-2">
+                            Marked as Excluded
+                            {action?.attachedDocument && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Eye
+                                      className="w-4 h-4 mr-2"
+                                      onClick={() =>
+                                        handleViewAttachedDocument(
+                                          action?.actionPlan,
+                                          action?.actionplanETA,
+                                          action?.attachedDocument
+                                        )
+                                      }
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>View document</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </span>
+                        ) : action.isNotApplicable ? (
+                          <span className="flex items-center gap-2">
+                            Marked as NA
+                            {action?.attachedDocument && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Eye
+                                      className="w-4 h-4 mr-2"
+                                      onClick={() =>
+                                        handleViewAttachedDocument(
+                                          action?.actionPlan,
+                                          action?.actionplanETA,
+                                          action?.attachedDocument
+                                        )
+                                      }
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>View document</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </span>
+                        ) : action?.actionPlan ? (
+                          <span className="flex items-center gap-2">
+                            {action?.actionValue}
+                            {action?.actionPlan && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Eye
+                                      className="w-4 h-4 mr-2"
+                                      onClick={() =>
+                                        handleViewAttachedDocument(
+                                          action?.actionPlan,
+                                          action?.actionplanETA,
+                                          undefined
+                                        )
+                                      }
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>View document</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </span>
+                        ) : (
+                          action.actionValue || ""
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-1">
@@ -415,6 +557,7 @@ const ViewGoalDetails = () => {
           </Card>
         </div>
       </SidebarLayout>
+
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -430,8 +573,59 @@ const ViewGoalDetails = () => {
               />
             </div>
           )}
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="actionPlan">Added Action Plan</Label>
+              <Textarea
+                id="actionPlan"
+                name="actionPlan"
+                placeholder="Enter your action plan here"
+                defaultValue={actionPlan}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="eta">Added ETA </label>
+              <input
+                type="date"
+                id="eta"
+                name="eta"
+                defaultValue={
+                  actionPlanETA
+                    ? new Date(actionPlanETA).toISOString().split("T")[0] // Convert Date to string in YYYY-MM-DD format
+                    : ""
+                }
+                className="w-full rounded-md border border-neutral-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-800 dark:placeholder:text-neutral-400 dark:focus-visible:ring-neutral-300"
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button onClick={() => setShowImageDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isNoteOpen} onOpenChange={setIsNoteOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Add QN notes</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Textarea
+                id="actionPlan"
+                name="actionPlan"
+                placeholder="Enter your action plan here"
+                onChange={(e) => {
+                  setNote(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={addNote}>Add</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

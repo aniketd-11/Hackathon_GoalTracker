@@ -90,22 +90,19 @@ export function GoalTrackerForm({
     const response = await createGoalTracker({
       goalTrackerName,
       type: trackerType,
+      template_type: template,
       startDate: startDate?.toISOString(),
       endDate: endDate?.toISOString(),
-      projectId: selectedProject?.id,
       isLatest: isLatestTracker,
+      projectId: selectedProject?.id,
     });
 
     if (response?.trackerId) {
       router.push("/fill-goal-details"); // Replace "/success" with the actual route
       dispatch(setTrackerId(response?.trackerId));
-      dispatch(setTrackerStatus("INITIATED"));
+      dispatch(setTrackerStatus("DRAFT"));
       fetchProjects();
     }
-
-    // console.log("Form Data: ", data); // You can replace this with an API call to save the data
-
-    // Redirect after submission
   };
 
   const handleOpenPicker = (picker: string) => {

@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const TableHeading = () => {
+const TableHeading = ({ role = "" }) => {
   return (
     <TableHeader className="bg-white sticky top-0 ">
       <TableRow>
@@ -30,7 +30,7 @@ const TableHeading = () => {
           Due date
         </TableHead>
         <TableHead scope="col" className="table-header">
-          Actions
+          {role === "dm" ? "QN notes" : "DM notes"}
         </TableHead>
       </TableRow>
     </TableHeader>
