@@ -37,7 +37,7 @@ const Reports = () => {
     <Layout>
       <SidebarLayout>
         <div className="flex items-center justify-center h-full gap-2">
-          <SelectTemplate setTemplate={setTemplate} />
+          <SelectTemplate setTemplate={setTemplate} page="goalTrackerForm" />
           {template && (
             <Button
               variant={template ? "default" : "ghost"}

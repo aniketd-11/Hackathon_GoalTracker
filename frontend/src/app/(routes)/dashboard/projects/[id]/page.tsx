@@ -2,12 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  EllipsisVertical,
-  ExternalLink,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import SidebarLayout from "@/app/sidebar-layout";
@@ -16,13 +11,13 @@ import { getProjectsForQN } from "@/services/projectsServiceQN";
 import Skeleton from "@/components/LoadingSkeleton/Skeleton";
 import dynamic from "next/dynamic";
 import TableHeading from "@/components/Projects/Static/TableHeading";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { changeStatusService } from "@/services/changeStatusService";
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuTrigger,
+// } from "@/components/ui/dropdown-menu";
+// import { changeStatusService } from "@/services/changeStatusService";
 import {
   Tooltip,
   TooltipContent,
@@ -37,21 +32,26 @@ import { useAppDispatch } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
 import SelectProject from "@/components/Projects/CreateGoalDialog/SelectProject";
 import SelectTemplate from "@/components/Projects/CreateGoalDialog/SelectTemplate";
+import { TableBody, TableCell, TableRow } from "@/components/ui/table";
+import StatusCell from "@/components/Projects/StatusCell";
 
 type GoalTracker = {
   trackerId: number;
   goalTrackerName: string;
   startDate: string;
   endDate: string;
-  status: string | null;
+  status: string;
   rating: string | null;
   actions: string | null;
+  dmNotes: string;
+  latest: string;
 };
 
 type Project = {
   projectId: number;
   projectName: string;
   templateType: string;
+  projectRating: string;
   goalTrackers: GoalTracker[];
 };
 
@@ -131,20 +131,17 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
     }
   };
 
-  const changeStatus = async (trackerId: number, status: string) => {
-    await changeStatusService(trackerId, status);
+  // const changeStatus = async (trackerId: number, status: string) => {
+  //   await changeStatusService(trackerId, status);
 
-    fetchProjects();
-  };
+  //   fetchProjects();
+  // };
 
   const handleRedirect = (status: string, id: number) => {
     dispatch(setTrackerId(id));
     dispatch(setTrackerStatus(status));
-    if (status === "IN_REVIEW") {
-      route.push("/view-goal-details");
-    } else {
-      route.push("/fill-goal-details");
-    }
+
+    route.push("/qn/view-goal-details");
   };
 
   return (
@@ -154,7 +151,7 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
           <div className="p-8">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="p-6 space-y-4">
-                <h1 className="text-2xl font-bold text-blue-800 mb-6">
+                <h1 className="text-2xl font-bold text-blue-600 mb-6">
                   Project Dashboard
                 </h1>
                 {Isloading ? (
@@ -168,41 +165,34 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
                         selectedProject={selectedProject}
                       />
                       <SelectTemplate setTemplate={setTemplate} />
-                      <Button
-                        variant="outline"
-                        className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 hover:border-blue-300"
-                      >
-                        At risk
-                      </Button>
+                      <Button variant="outline">At risk</Button>
                     </div>
-                    <div className="overflow-x-auto overflow-y-auto max-h-[66vh]">
+                    <div className="overflow-x-auto">
                       <div className="inline-block min-w-full align-middle">
-                        <div className="rounded-lg">
-                          <table className="min-w-full divide-y divide-blue-200 ">
+                        <div className="rounded-lg overflow-y-auto max-h-[66vh]">
+                          <table className="min-w-full ">
                             <TableHeading />
-                            <tbody className="bg-white divide-y divide-blue-200">
+                            <TableBody>
                               {(isFiltered ? filteredProjects : projects).map(
                                 (project) => {
                                   // If no goalTrackers, display a single row with placeholders
                                   if (project.goalTrackers.length === 0) {
                                     return (
-                                      <tr
+                                      <TableRow
                                         key={project.projectId}
                                         className="hover:bg-blue-50 transition-colors duration-150 ease-in-out"
                                       >
-                                        <td className="table-cell">
+                                        <TableCell className="table-cell">
                                           <div className="flex items-center">
-                                            <div className="ml-4">
-                                              <div className="text-sm font-medium text-blue-900">
-                                                {project?.projectName}
-                                              </div>
+                                            <div className="ml-4 font-medium text-sm">
+                                              {project?.projectName}
                                             </div>
                                           </div>
-                                        </td>
-                                        <td className="table-cell text-sm text-blue-700">
+                                        </TableCell>
+                                        <TableCell className="table-cell  ">
                                           -
-                                        </td>
-                                        <td className="table-cell text-sm text-blue-700">
+                                        </TableCell>
+                                        <TableCell className="table-cell  ">
                                           {(() => {
                                             switch (project.templateType) {
                                               case "T_M":
@@ -217,175 +207,172 @@ const ProfessionalDashboard = ({ params }: { params: { id: number } }) => {
                                                 ); // Fallback if no match
                                             }
                                           })()}
-                                        </td>
-                                        <td className="table-cell text-sm text-blue-700">
+                                        </TableCell>
+                                        <TableCell className="table-cell  ">
                                           -
-                                        </td>
-                                        <td className="table-cell text-sm text-blue-700">
+                                        </TableCell>
+                                        <TableCell className="table-cell  ">
                                           -
-                                        </td>
-                                        <td className="table-cell text-sm text-blue-700">
+                                        </TableCell>
+                                        <TableCell className="table-cell  ">
                                           -
-                                        </td>
-                                      </tr>
+                                        </TableCell>
+                                      </TableRow>
                                     );
                                   }
 
                                   // Map over goalTrackers if they exist
                                   return project.goalTrackers.map(
-                                    (tracker, index) => (
-                                      <tr
-                                        key={tracker.trackerId}
-                                        className="hover:bg-blue-50 transition-colors duration-150 ease-in-out"
-                                      >
-                                        {/* Display projectName only in the first row of each project's goal trackers */}
-                                        <td className="table-cell">
-                                          {index === 0 && (
-                                            <div className="flex items-center">
-                                              <div className="ml-4">
-                                                <div className="text-sm font-medium text-blue-900">
-                                                  {project?.projectName}
+                                    (tracker, index) =>
+                                      tracker?.status !== "DRAFT" && (
+                                        <TableRow
+                                          key={tracker.trackerId}
+                                          className={`${
+                                            tracker?.latest
+                                              ? "bg-green-100"
+                                              : ""
+                                          }`}
+                                        >
+                                          <TableCell className="table-cell">
+                                            {index === 0 && (
+                                              <div className="flex items-center">
+                                                <div className="ml-4">
+                                                  <div className="font-medium text-sm flex items-center gap-2">
+                                                    <div
+                                                      className={`w-3 h-3 rounded-full ${getColorClass(
+                                                        project?.projectRating ??
+                                                          ""
+                                                      )}`}
+                                                    ></div>
+                                                    {project?.projectName}
+                                                  </div>
                                                 </div>
                                               </div>
-                                            </div>
-                                          )}
-                                        </td>
-                                        <td className="table-cell">
-                                          <div className="text-sm text-blue-700 flex items-center gap-2">
-                                            <div
-                                              className={`w-2 h-2 rounded-full ${getColorClass(
-                                                tracker?.rating ?? ""
-                                              )}`}
-                                            ></div>
-                                            {tracker.goalTrackerName || "-"}
-                                            {tracker?.status ===
-                                              "IN_REVIEW" && (
-                                              <TooltipProvider>
-                                                <Tooltip>
-                                                  <TooltipTrigger>
-                                                    <div>
-                                                      <ExternalLink
-                                                        className="text-gray-500 w-4 h-4 cursor-pointer"
-                                                        onClick={() =>
-                                                          handleRedirect(
-                                                            tracker?.status ??
-                                                              "",
-                                                            tracker?.trackerId
-                                                          )
-                                                        }
-                                                      />
-                                                    </div>
-                                                  </TooltipTrigger>
-                                                  <TooltipContent>
-                                                    <p>Fill tracker details</p>
-                                                  </TooltipContent>
-                                                </Tooltip>
-                                              </TooltipProvider>
                                             )}
-                                          </div>
-                                        </td>
-                                        <td className="table-cell">
-                                          <div className="text-sm text-blue-700">
-                                            {(() => {
-                                              switch (project.templateType) {
-                                                case "T_M":
-                                                  return "T & M";
-                                                case "FIXED_BID":
-                                                  return "Fixed bid";
-                                                case "STAFFING":
-                                                  return "Staffing";
-                                                default:
-                                                  return (
-                                                    project.templateType || "-"
-                                                  ); // Fallback if no match
-                                              }
-                                            })()}
-                                          </div>
-                                        </td>
-                                        <td className="table-cell">
-                                          <span className="text-sm text-blue-700">
-                                            {(() => {
-                                              switch (tracker.status) {
-                                                case "INITIATED":
-                                                  return "Initiated";
-                                                case "IN_REVIEW":
-                                                  return "In Review";
-                                                case "IN_PROGRESS":
-                                                  return "In Progress";
-                                                case "IN_CLOSURE":
-                                                  return "In Closure";
-                                                case "CLOSED":
-                                                  return "Closed";
-                                                default:
-                                                  return "No status";
-                                              }
-                                            })()}
-                                          </span>
-                                        </td>
-                                        <td className="table-cell">
-                                          <div className="text-sm text-blue-700">
-                                            {tracker.startDate
-                                              ? new Date(
-                                                  tracker.startDate
-                                                ).toLocaleDateString("en-GB", {
-                                                  day: "2-digit",
-                                                  month: "short",
-                                                  year: "numeric",
-                                                })
-                                              : "-"}
-                                          </div>
-                                        </td>
-                                        <td className="table-cell">
-                                          <div className="text-sm text-blue-700">
-                                            {tracker.endDate
-                                              ? new Date(
-                                                  tracker.endDate
-                                                ).toLocaleDateString("en-GB", {
-                                                  day: "2-digit",
-                                                  month: "short",
-                                                  year: "numeric",
-                                                })
-                                              : "-"}
-                                          </div>
-                                        </td>
+                                          </TableCell>
+                                          <TableCell className="table-cell">
+                                            <div className=" flex items-center gap-2 text-sm font-medium">
+                                              <div
+                                                className={`w-3 h-3 rounded-full ${getColorClass(
+                                                  tracker?.rating ?? ""
+                                                )}`}
+                                              ></div>
 
-                                        {tracker?.status === "IN_REVIEW" && (
-                                          <td className="table-cell">
-                                            <DropdownMenu>
-                                              <DropdownMenuTrigger>
-                                                <EllipsisVertical className="text-sm text-blue-700 h-5 w-5 outline-none" />
-                                              </DropdownMenuTrigger>
-                                              <DropdownMenuContent>
-                                                <DropdownMenuItem
-                                                  onClick={() =>
-                                                    changeStatus(
-                                                      tracker?.trackerId,
-                                                      "IN_PROGRESS"
-                                                    )
-                                                  }
-                                                >
-                                                  Change status to In progress
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                  onClick={() =>
-                                                    changeStatus(
-                                                      tracker?.trackerId,
-                                                      "CLOSED"
-                                                    )
-                                                  }
-                                                >
-                                                  Change status to Closed
-                                                </DropdownMenuItem>
-                                              </DropdownMenuContent>
-                                            </DropdownMenu>
-                                          </td>
-                                        )}
-                                      </tr>
-                                    )
+                                              {tracker.goalTrackerName || "-"}
+
+                                              {tracker?.status !== "DRAFT" && (
+                                                <TooltipProvider>
+                                                  <Tooltip>
+                                                    <TooltipTrigger>
+                                                      <div>
+                                                        <Eye
+                                                          className="text-blue-500 w-4 h-4 cursor-pointer"
+                                                          onClick={() =>
+                                                            handleRedirect(
+                                                              tracker?.status ??
+                                                                "",
+                                                              tracker?.trackerId
+                                                            )
+                                                          }
+                                                        />
+                                                      </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                      <p>View filled deatils</p>
+                                                    </TooltipContent>
+                                                  </Tooltip>
+                                                </TooltipProvider>
+                                              )}
+                                            </div>
+                                          </TableCell>
+
+                                          <TableCell>
+                                            <div className="text-sm">
+                                              {(() => {
+                                                switch (project.templateType) {
+                                                  case "T_M":
+                                                    return "T & M";
+                                                  case "FIXED_BID":
+                                                    return "Fixed bid";
+                                                  case "STAFFING":
+                                                    return "Staffing";
+                                                  default:
+                                                    return (
+                                                      project.templateType ||
+                                                      "-"
+                                                    ); // Fallback if no match
+                                                }
+                                              })()}
+                                            </div>
+                                          </TableCell>
+                                          {/* <TableCell>
+                                            <span className="text-sm">
+                                              {(() => {
+                                                switch (tracker.status) {
+                                                  case "DRAFT":
+                                                    return "In Draft";
+                                                  case "INITIATED":
+                                                    return "Initiated";
+                                                  case "IN_REVIEW":
+                                                    return "In Review";
+                                                  case "IN_PROGRESS":
+                                                    return "In Progress";
+                                                  case "IN_CLOSURE":
+                                                    return "In Closure";
+                                                  case "CLOSED":
+                                                    return "Closed";
+                                                  default:
+                                                    return "No status";
+                                                }
+                                              })()}
+                                            </span>
+                                          </TableCell> */}
+                                          <StatusCell status={tracker.status} />
+                                          <TableCell>
+                                            <div className="text-sm">
+                                              {tracker.startDate
+                                                ? new Date(
+                                                    tracker.startDate
+                                                  ).toLocaleDateString(
+                                                    "en-GB",
+                                                    {
+                                                      day: "2-digit",
+                                                      month: "short",
+                                                      year: "numeric",
+                                                    }
+                                                  )
+                                                : "-"}
+                                            </div>
+                                          </TableCell>
+                                          <TableCell>
+                                            <div className="text-sm">
+                                              {tracker.endDate
+                                                ? new Date(
+                                                    tracker.endDate
+                                                  ).toLocaleDateString(
+                                                    "en-GB",
+                                                    {
+                                                      day: "2-digit",
+                                                      month: "short",
+                                                      year: "numeric",
+                                                    }
+                                                  )
+                                                : "-"}
+                                            </div>
+                                          </TableCell>
+                                          {tracker?.dmNotes ? (
+                                            <TableCell className="w-48 text-sm">
+                                              {tracker?.dmNotes}
+                                            </TableCell>
+                                          ) : (
+                                            <TableCell>-</TableCell>
+                                          )}
+                                        </TableRow>
+                                      )
                                   );
                                 }
                               )}
-                            </tbody>
+                            </TableBody>
                           </table>
                         </div>
                       </div>
