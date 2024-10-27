@@ -77,6 +77,7 @@ interface GoalDetails {
   rating: string;
   actions: ActionValue[];
   qnNotes: string;
+  dmNotes: string;
 }
 
 const ViewGoalDetails = () => {
@@ -320,6 +321,11 @@ const ViewGoalDetails = () => {
                       }
                     })()}
                   </span>
+                  {goalDetails?.dmNotes && (
+                    <span className="text-sm text-gray-500">
+                      DM notes: {goalDetails?.dmNotes || ""}
+                    </span>
+                  )}
                   {goalDetails?.qnNotes && (
                     <span className="text-sm text-gray-500">
                       QN notes: {goalDetails?.qnNotes || ""}
@@ -518,9 +524,9 @@ const ViewGoalDetails = () => {
                               </span>
                               {action?.actionPlan
                                 ? ""
-                                : (action.actionRating === "ORANGE" ||
-                                    action.actionRating === "RED" ||
-                                    action.actionRating === "YELLOW") && (
+                                : action?.actionRating !== "GREEN" &&
+                                  (goalDetails?.status === "DRAFT" ||
+                                    goalDetails?.status === "INITIATED") && (
                                     <CirclePlus
                                       className="w-4 h-4 cursor-pointer"
                                       onClick={() =>

@@ -47,6 +47,7 @@ import {
   // TableRow,
 } from "@/components/ui/table";
 import StatusCell from "@/components/Projects/StatusCell";
+import { toast } from "react-toastify";
 
 type GoalTracker = {
   trackerId: number;
@@ -131,6 +132,7 @@ const ProfessionalDashboard = () => {
       }
     } catch (error) {
       console.log("Error fetching accounts:", error);
+      toast.error("Error fetching Projects and Trackers.");
     }
   }
 

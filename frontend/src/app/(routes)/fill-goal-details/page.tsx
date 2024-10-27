@@ -50,8 +50,6 @@ import dynamic from "next/dynamic";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-toastify";
 
-// import { DatePicker } from "@/components/Projects/CreateGoalDialog/DatePicker";
-
 interface FormField {
   actionId: number;
   templateTypes: string;
@@ -71,12 +69,6 @@ interface FormField {
   actionPlan?: string;
   eta?: Date | undefined;
 }
-
-// interface FieldData {
-//   value?: string;
-//   isNotApplicable?: boolean;
-//   attachedDocument?: string | null; // Ensure attachedDocument is defined
-// }
 
 type Step = {
   isNotApplicable: boolean;
@@ -102,7 +94,7 @@ const GoalDetailsForm = () => {
   const [currentActionId, setCurrentActionId] = useState<string | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
-  const [showCustomizeInput, setShowCustomizeInput] = useState<boolean>(false);
+  const [selectedFieldId, setSelectedFieldId] = useState<any>(null);
   const [currentFieldId, setCurrentFieldId] = useState("");
   const [isSubmitButtonClicked, setIsSubmitButtonClicked] = useState(false);
 
@@ -150,6 +142,7 @@ const GoalDetailsForm = () => {
       }
     } catch (error) {
       console.log("Error fetching form details:", error);
+      toast.error("Error fetching form details.");
     }
   }
 
@@ -187,56 +180,6 @@ const GoalDetailsForm = () => {
     });
   };
 
-  // const onSubmit = async (data: FieldValues) => {
-  //   const formattedGoals: Array<{
-  //     actionId: number;
-  //     actionValue: string;
-  //     isNotApplicable: boolean;
-  //     isExcluded: boolean;
-  //     customBenchmarkValue: string | null;
-  //   }> = [];
-
-  //   const fileUploads: { [key: string]: File } = {};
-  //   data.steps.forEach((step: any) => {
-  //     Object.entries(step).forEach(([actionId, fieldData]: [string, any]) => {
-  //       const actionValue =
-  //         fieldData.value !== undefined ? fieldData.value : "";
-  //       const isNotApplicable = fieldData.isNotApplicable || actionValue === "";
-  //       const isExcluded = fieldData.isExcluded || false;
-  //       const customBenchmarkValue = fieldData.customBenchmarkValue || null;
-
-  //       const goal = {
-  //         actionId: parseInt(actionId, 10),
-  //         actionValue,
-  //         isNotApplicable,
-  //         isExcluded,
-  //         customBenchmarkValue,
-  //       };
-
-  //       if (actionValue !== "" || isNotApplicable || isExcluded) {
-  //         formattedGoals.push(goal);
-  //       }
-
-  //       if (fieldData.attachedDocument) {
-  //         fileUploads[`file-${actionId}`] = fieldData.attachedDocument;
-  //       }
-  //     });
-  //   });
-
-  //   console.log(formattedGoals);
-  //   console.log(fileUploads);
-
-  //   // const response = await submitTrackingDetails({
-  //   //   formattedGoals,
-  //   //   trackerId,
-  //   //   fileUploads,
-  //   // });
-
-  //   // if (response?.status === 200) {
-  //   //   route.push("/dashboard/projects");
-  //   // }
-  // };
-
   const onSubmit = async (data: FieldValues) => {
     setIsSubmitButtonClicked(true);
 
@@ -249,7 +192,7 @@ const GoalDetailsForm = () => {
       actionValue: string;
       isNotApplicable: boolean;
       isExcluded: boolean;
-      customBenchmarkValue: string | number | null;
+      customBenchMarkValue: string | number | null;
       actionPlan?: string;
       actionPlanETA?: Date | undefined | null;
       additionalInfoValue: null;
@@ -263,7 +206,7 @@ const GoalDetailsForm = () => {
           fieldData.value !== undefined ? fieldData.value : "";
         const isNotApplicable = fieldData.isNotApplicable || actionValue === "";
         const isExcluded = fieldData.isExcluded || false;
-        const customBenchmarkValue = fieldData.customBenchmarkValue || null;
+        const customBenchMarkValue = fieldData.customBenchmarkValue || null;
         const actionPlan = fieldData.actionPlan;
         const actionPlanETA = fieldData.actionPlanETA || "";
 
@@ -272,7 +215,7 @@ const GoalDetailsForm = () => {
           actionValue,
           isNotApplicable,
           isExcluded,
-          customBenchmarkValue,
+          customBenchMarkValue,
           actionPlan,
           actionPlanETA,
           additionalInfoValue: null,
@@ -396,7 +339,7 @@ const GoalDetailsForm = () => {
     );
 
     return (
-      <div key={field.actionId} className="mb-6 p-4 bg-gray-50 rounded-lg">
+      <div key={field.actionId} className="mb-4 p-4 bg-gray-50 rounded-lg">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
             <Label className="text-sm font-medium">{field.actionName}</Label>
@@ -526,13 +469,15 @@ const GoalDetailsForm = () => {
               size="icon"
               onClick={(ev) => {
                 ev.preventDefault();
-                setShowCustomizeInput(!showCustomizeInput);
+                setSelectedFieldId(
+                  selectedFieldId === field.actionId ? null : field.actionId
+                );
               }}
             >
               <Edit className="h-4 w-4" />
             </Button>
 
-            {showCustomizeInput && (
+            {selectedFieldId === field.actionId && (
               <div className="flex flex-col items-start gap-2">
                 {" "}
                 <Label htmlFor="customizeValue">Add customize benchmark</Label>
@@ -603,7 +548,7 @@ const GoalDetailsForm = () => {
   return (
     <Layout>
       <SidebarLayout>
-        <div className="container mx-auto py-8 flex flex-col min-h-screen">
+        <div className="container  py-8 flex flex-col relative mb-5">
           <div className="flex-grow flex flex-col">
             <h1 className="text-2xl font-bold text-center mb-8">
               Goal Details
@@ -639,57 +584,59 @@ const GoalDetailsForm = () => {
                     </TabsContent>
                   ))}
                 </Tabs>
-                <div className="flex justify-between mt-auto pt-8">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      setCurrentStep(
-                        (prev) => `${Math.max(1, parseInt(prev) - 1)}`
-                      )
-                    }
-                    disabled={currentStep === "1"}
-                  >
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                  </Button>
-                  {currentStep !== "3" ? (
+                <div className="absolute  bottom-0 w-full">
+                  <div className="flex justify-between  pt-8 pr-16 ">
                     <Button
                       type="button"
-                      onClick={(ev) => {
-                        ev.preventDefault(); // Prevent the default form submission
+                      variant="outline"
+                      onClick={() =>
                         setCurrentStep(
-                          (prev) => `${Math.min(3, parseInt(prev) + 1)}`
-                        ); // Increment step
-                      }}
+                          (prev) => `${Math.max(1, parseInt(prev) - 1)}`
+                        )
+                      }
+                      disabled={currentStep === "1"}
                     >
-                      Next <ChevronRight className="ml-2 h-4 w-4" />
+                      <ChevronLeft className="mr-2 h-4 w-4" /> Previous
                     </Button>
-                  ) : (
-                    <Button type="submit">
-                      {isSubmitButtonClicked ? (
-                        <div role="status">
-                          <svg
-                            aria-hidden="true"
-                            className="w-4 h-4 text-gray-200 animate-spin dark:text-gray-600 fill-white"
-                            viewBox="0 0 100 101"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                              fill="currentColor"
-                            />
-                            <path
-                              d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                              fill="currentFill"
-                            />
-                          </svg>
-                        </div>
-                      ) : (
-                        "Submit"
-                      )}
-                    </Button>
-                  )}
+                    {currentStep !== "3" ? (
+                      <Button
+                        type="button"
+                        onClick={(ev) => {
+                          ev.preventDefault(); // Prevent the default form submission
+                          setCurrentStep(
+                            (prev) => `${Math.min(3, parseInt(prev) + 1)}`
+                          ); // Increment step
+                        }}
+                      >
+                        Next <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button type="submit" className="mr-8">
+                        {isSubmitButtonClicked ? (
+                          <div role="status">
+                            <svg
+                              aria-hidden="true"
+                              className="w-4 h-4 text-gray-200 animate-spin dark:text-gray-600 fill-white"
+                              viewBox="0 0 100 101"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                                fill="currentColor"
+                              />
+                              <path
+                                d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                                fill="currentFill"
+                              />
+                            </svg>
+                          </div>
+                        ) : (
+                          "Submit"
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </form>
             )}

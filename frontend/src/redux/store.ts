@@ -3,6 +3,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import trackerDetailsInfoReducer from "./slices/trackerDetailsSlice";
+import accountDetailsInfoReducer from "./slices/accountDetails";
 import {
   persistReducer,
   FLUSH,
@@ -48,6 +49,7 @@ const persistConfig = {
 const reducer = combineReducers({
   auth: authReducer,
   trackerDetails: trackerDetailsInfoReducer,
+  accountDetails: accountDetailsInfoReducer,
 });
 
 // Persists the root reducer with the defined persist configuration
