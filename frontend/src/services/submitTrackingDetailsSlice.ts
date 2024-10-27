@@ -8,7 +8,7 @@ export async function submitTrackingDetails({
     actionValue: string;
     isNotApplicable: boolean;
     isExcluded: boolean;
-    customBenchmarkValue: string | number | null;
+    customBenchMarkValue: string | number | null;
     actionPlan?: string | undefined;
     actionPlanETA?: Date | null | undefined;
     additionalInfoValue: null;

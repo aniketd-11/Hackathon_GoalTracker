@@ -50,6 +50,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { addNoteService } from "@/services/addNoteService";
 import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
 
 interface ActionValue {
   actionName: string;
@@ -75,6 +76,7 @@ interface GoalDetails {
   rating: string;
   actions: ActionValue[];
   dmNotes: string;
+  qnNotes: string;
 }
 
 const ViewGoalDetails = () => {
@@ -95,7 +97,9 @@ const ViewGoalDetails = () => {
     (state: RootState) => state.auth.user?.roleName
   );
 
-  // const isAuthenticated = useSelector((state: RootState) => state.auth.user);
+  const accountId = useSelector(
+    (state: RootState) => state.accountDetails?.accountId
+  );
 
   const route = useRouter();
 
@@ -227,11 +231,14 @@ const ViewGoalDetails = () => {
     } else {
       toast.error("Error while changing status");
     }
+
+    if (status === "CLOSED") {
+      route.push(`/dashboard/projects/${accountId}`);
+    }
   };
 
   const handleChangeRating = async () => {
     await changeRatingService(trackerId, selectedRating);
-    route.push("/dashboard/accounts");
   };
 
   const addNote = async () => {
@@ -258,37 +265,44 @@ const ViewGoalDetails = () => {
                   {goalDetails?.rating}
                 </Badge>
 
-                {goalDetails?.status !== "IN_CLOSURE" && (
-                  <>
-                    <Select onValueChange={(value) => setSelectedRating(value)}>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            goalDetails?.rating
-                              ? `Current rating: ${goalDetails.rating}`
-                              : "Change rating"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["GREEN", "YELLOW", "RED"]
-                          .filter((rating) => rating !== goalDetails?.rating) // Filter out the current rating
-                          .map((rating) => (
-                            <SelectItem key={rating} value={rating}>
-                              {rating}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                {goalDetails?.status !== "INITIATED" &&
+                  goalDetails?.status !== "IN_PROGRESS" &&
+                  goalDetails?.status !== "CLOSED" && (
+                    <>
+                      <Select
+                        onValueChange={(value) => setSelectedRating(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              goalDetails?.rating
+                                ? `Current rating: ${goalDetails.rating}`
+                                : "Change rating"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["GREEN", "YELLOW", "RED"]
+                            .filter((rating) => rating !== goalDetails?.rating) // Filter out the current rating
+                            .map((rating) => (
+                              <SelectItem key={rating} value={rating}>
+                                {rating}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
 
-                    {selectedRating &&
-                      selectedRating !== goalDetails?.rating && (
-                        <Button onClick={handleChangeRating} className="w-fit">
-                          Submit Rating
-                        </Button>
-                      )}
-                  </>
-                )}
+                      {selectedRating &&
+                        selectedRating !== goalDetails?.rating && (
+                          <Button
+                            onClick={handleChangeRating}
+                            className="w-fit"
+                          >
+                            Submit Rating
+                          </Button>
+                        )}
+                    </>
+                  )}
               </div>
             </CardHeader>
             <CardContent>
@@ -324,6 +338,11 @@ const ViewGoalDetails = () => {
                   {goalDetails?.dmNotes && (
                     <span className="text-sm text-gray-500">
                       DM notes: {goalDetails?.dmNotes || ""}
+                    </span>
+                  )}
+                  {goalDetails?.qnNotes && (
+                    <span className="text-sm text-gray-500">
+                      QN notes: {goalDetails?.qnNotes || ""}
                     </span>
                   )}
                 </div>
@@ -379,14 +398,16 @@ const ViewGoalDetails = () => {
                         Change Status to Closed
                       </Button>
                     )}
-                    {goalDetails?.status !== "IN_CLOSURE" && (
-                      <Button
-                        onClick={() => setIsNoteOpen(true)}
-                        className="w-fit"
-                      >
-                        Add QN notes
-                      </Button>
-                    )}
+                    {goalDetails?.status !== "INITIATED" &&
+                      goalDetails?.status !== "IN_PROGRESS" &&
+                      goalDetails?.status !== "CLOSED" && (
+                        <Button
+                          onClick={() => setIsNoteOpen(true)}
+                          className="w-fit"
+                        >
+                          Add QN notes
+                        </Button>
+                      )}
                   </div>
                 </div>
               </div>

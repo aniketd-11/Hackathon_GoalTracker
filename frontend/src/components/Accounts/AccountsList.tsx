@@ -1,6 +1,8 @@
 "use client";
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAppDispatch } from "@/redux/hooks";
+import { setAccountId } from "@/redux/slices/accountDetails";
 import { useRouter } from "next/navigation";
 
 type Account = {
@@ -14,8 +16,10 @@ type AccountListProps = {
 
 export default function AccountList({ accounts }: AccountListProps) {
   const route = useRouter();
+  const dispatch = useAppDispatch();
 
   const handleCardClick = (accountId: number) => {
+    dispatch(setAccountId(accountId));
     route.push(`/dashboard/projects/${accountId}`);
   };
 
