@@ -11,7 +11,7 @@ RUN mvn clean package -DskipTests
 FROM openjdk:21-jdk-slim
 
 # Install necessary libraries for font rendering(Excel creation)
-RUN apt-get update && apt-get install -y libfreetype6 libfontconfig1
+#RUN apt-get update && apt-get install -y libfreetype6 libfontconfig1
 
 # Copy the JAR file from the build stage to the runtime stage
 COPY --from=build /target/GoalTracker-0.0.1-SNAPSHOT.jar GoalTracker.jar
