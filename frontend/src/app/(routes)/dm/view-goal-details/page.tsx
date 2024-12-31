@@ -286,7 +286,7 @@ const ViewGoalDetails = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-2xl font-bold">
-                Tracker Details
+                Project Details
               </CardTitle>
               <div className="flex gap-2 items-center">
                 <Badge className={getRatingColor(goalDetails?.rating || "")}>
