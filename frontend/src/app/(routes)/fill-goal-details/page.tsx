@@ -551,7 +551,7 @@ const GoalDetailsForm = () => {
         <div className="container  py-8 flex flex-col relative mb-5">
           <div className="flex-grow flex flex-col">
             <h1 className="text-2xl font-bold text-center mb-8">
-              Goal Details
+              Tracker Details
             </h1>
             {isLoading ? (
               <Skeleton />

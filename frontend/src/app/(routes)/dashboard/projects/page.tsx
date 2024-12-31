@@ -177,7 +177,7 @@ const ProfessionalDashboard = () => {
             <div className="rounded-xl shadow-lg overflow-hidden h-[88vh]">
               <div className="p-6 space-y-4">
                 <h1 className="text-2xl font-bold text-blue-600 mb-6">
-                  Project Dashboard
+                  Tracker Dashboard
                 </h1>
 
                 {Isloading ? (

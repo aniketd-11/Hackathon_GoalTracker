@@ -239,6 +239,7 @@ const ViewGoalDetails = () => {
 
   const handleChangeRating = async () => {
     await changeRatingService(trackerId, selectedRating);
+    fetchActionValues();
   };
 
   const addNote = async () => {

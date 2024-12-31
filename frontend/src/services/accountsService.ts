@@ -5,6 +5,7 @@ export async function getAccounts() {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-store", // Ensure no caching
       },
     });
 

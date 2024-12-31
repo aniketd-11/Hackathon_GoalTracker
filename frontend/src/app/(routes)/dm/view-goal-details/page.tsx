@@ -228,6 +228,7 @@ const ViewGoalDetails = () => {
     const response = await changeStatusService(trackerId, "IN_CLOSURE");
     if (response?.status == 200) {
       toast.success("Status changed successfully");
+      fetchActionValues();
     } else {
       toast.success("Error while changing status");
     }
@@ -284,7 +285,9 @@ const ViewGoalDetails = () => {
         <div className="p-6 space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-2xl font-bold">Goal Details</CardTitle>
+              <CardTitle className="text-2xl font-bold">
+                Tracker Details
+              </CardTitle>
               <div className="flex gap-2 items-center">
                 <Badge className={getRatingColor(goalDetails?.rating || "")}>
                   {goalDetails?.rating}
@@ -510,11 +513,11 @@ const ViewGoalDetails = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 ">
                           {action.actionRating !== null &&
                             getRatingIcon(action.actionRating)}
                           {action.actionRating !== null ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-5 ">
                               <span
                                 className={`px-2 py-1 rounded-full text-xs font-semibold ${getRatingColor(
                                   action.actionRating
@@ -522,18 +525,23 @@ const ViewGoalDetails = () => {
                               >
                                 {action.actionRating}
                               </span>
-                              {action?.actionPlan
-                                ? ""
-                                : action?.actionRating !== "GREEN" &&
-                                  (goalDetails?.status === "DRAFT" ||
-                                    goalDetails?.status === "INITIATED") && (
-                                    <CirclePlus
-                                      className="w-4 h-4 cursor-pointer"
-                                      onClick={() =>
-                                        handleAddActionPlan(action?.actionId)
-                                      }
-                                    />
-                                  )}
+                              {action?.actionPlan ? (
+                                ""
+                              ) : action?.actionRating !== "GREEN" &&
+                                (goalDetails?.status === "DRAFT" ||
+                                  goalDetails?.status === "INITIATED") ? (
+                                <CirclePlus
+                                  className="w-4 h-4 cursor-pointer"
+                                  onClick={() =>
+                                    handleAddActionPlan(action?.actionId)
+                                  }
+                                />
+                              ) : action?.actionRating !== "GREEN" &&
+                                goalDetails?.status === "IN_PROGRESS" ? (
+                                <Button className="p-2 w-14 "> Close</Button>
+                              ) : (
+                                ""
+                              )}
                             </div>
                           ) : (
                             <span className="px-2 py-1 rounded-full text-xs font-semibold text-gray-500">

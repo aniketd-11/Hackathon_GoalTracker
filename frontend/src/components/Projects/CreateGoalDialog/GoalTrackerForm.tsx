@@ -117,14 +117,14 @@ export function GoalTrackerForm({
           variant="outline"
           className="bg-blue-600 text-white border-blue-200 hover:bg-blue-900 hover:text-white"
         >
-          Create a new goal
+          Add a tracker
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="text-base text-blue-800">
-              Create a new goal
+              Create a new tracker
             </DialogTitle>
             <DialogDescription>
               Enter the details below and make sure all fields are accurate.
