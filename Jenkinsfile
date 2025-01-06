@@ -22,7 +22,10 @@ pipeline {
         stage('Deploy Frontend') {
             steps {
                 sh '''
-                docker stop frontend || true
+                # Stop and remove the existing frontend container if it exists
+                docker ps -q --filter "name=frontend" | grep -q . && docker stop frontend && docker rm frontend || true
+
+                # Run the new frontend container
                 docker run -d --name frontend --rm -p 3000:3000 ${FRONTEND_IMAGE}:latest
                 '''
             }
