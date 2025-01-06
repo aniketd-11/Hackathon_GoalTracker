@@ -16,25 +16,17 @@ COPY . .
 # Build the application
 RUN npm run build
 
-
-
-# Stage 2: Serve the built application using a lightweight server
-FROM nginx:stable-alpine
+# Stage 2: Run the Next.js application with Node.js
+FROM node:20-alpine
 
 # Set working directory
-WORKDIR /usr/share/nginx/html
+WORKDIR /app
 
-# Remove default Nginx configuration
-RUN rm -rf ./*
+# Copy application code and dependencies from the builder stage
+COPY --from=builder /app /app
 
-# Copy built files from the builder stage
-COPY --from=builder /app/.next /usr/share/nginx/html
-
-# Add a custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 3000
+# Expose port for the app
 EXPOSE 3000
 
-
-### Optional : Custom Nginx configuration If applicable
+# Run the Next.js application
+CMD ["npm", "start"]
