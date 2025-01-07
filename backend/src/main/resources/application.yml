@@ -2,8 +2,8 @@ spring:
   application:
     name: GoalTracker
   datasource:
-    url: jdbc:mysql://eazyschooldb-aniketd936-f7fb.i.aivencloud.com:10899/goaltrackerDB
-    username: avnadmin
+    url: jdbc:mysql://13.126.125.227:3306/goaltrackerDB
+    username: SHREYASH
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:

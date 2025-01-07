@@ -237,6 +237,8 @@ export default function LoginPage() {
             className="mx-auto mb-4"
           /> */}
           <h1 className="text-3xl font-bold text-gray-900 mb-4 pr-5">
+            Automated Goal Tracking and Management System
+            <br />
             for Efficient Project Oversight with
             <br /> <span className="text-blue-600">Quality Nexus</span>!
           </h1>
