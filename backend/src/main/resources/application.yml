@@ -8,22 +8,22 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-#      ddl-auto: update # Automatically update the database schema (can be changed to 'validate', 'none', etc.)
+    #      ddl-auto: update # Automatically update the database schema (can be changed to 'validate', 'none', etc.)
     show-sql: true # Log SQL queries in the console
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
   resources:
-    static-locations: file:uploads/  # This exposes the 'uploads' directory
+    static-locations: file:uploads/ # This exposes the 'uploads' directory
   mvc:
     static-path-pattern: /uploads/**
   # Add file upload size limits here
   servlet:
     multipart:
       enabled: true
-      max-file-size: 10MB    # Maximum file size allowed for upload
+      max-file-size: 10MB # Maximum file size allowed for upload
       max-request-size: 10MB # Maximum size allowed for multipart/form-data requests
 
 server:
-  port: 8080
+  port: 8000

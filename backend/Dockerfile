@@ -15,7 +15,7 @@ FROM openjdk:21-jdk-slim
 COPY --from=build /target/GoalTracker-0.0.1-SNAPSHOT.jar GoalTracker.jar
 
 # Expose the application port
-EXPOSE 8080
+EXPOSE 8000
 
 # Set the Java headless mode to prevent AWT issues in non-GUI environments
 ENV JAVA_OPTS="-Djava.awt.headless=true"
